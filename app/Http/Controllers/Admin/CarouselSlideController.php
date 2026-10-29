@@ -25,7 +25,6 @@ class CarouselSlideController extends Controller
         if ($request->hasFile('media')) {
             $validated['media_path'] = $request->file('media')->store('carousel', 'public');
         }
-        
 
         unset($validated['media']);
 
@@ -105,6 +104,7 @@ class CarouselSlideController extends Controller
                 },
             ],
             'background_color' => ['nullable', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'media_scale' => ['nullable', 'integer', 'min:30', 'max:100'],
             'eyebrow_text' => ['nullable', 'string', 'max:100'],
             'headline' => ['required', 'string', 'max:255'],
             'subtext' => ['nullable', 'string', 'max:500'],

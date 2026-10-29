@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 
 #[Fillable([
-    'media_type', 'media_path', 'background_color', 'eyebrow_text', 'headline',
+    'media_type', 'media_path', 'background_color', 'media_scale', 'eyebrow_text', 'headline',
     'subtext', 'cta_label', 'cta_link', 'sort_order', 'is_active',
 ])]
 class CarouselSlide extends Model

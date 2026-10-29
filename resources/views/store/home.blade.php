@@ -31,9 +31,12 @@
           <span class="category-card-media">
             @if ($slide->media_path)
               @if ($slide->media_type === 'video')
-                <video src="{{ asset('storage/'.$slide->media_path) }}" autoplay muted loop playsinline aria-hidden="true"></video>
+                <video src="{{ asset('storage/'.$slide->media_path) }}"
+                       style="width: {{ $slide->media_scale ?? 90 }}%; height: {{ $slide->media_scale ?? 90 }}%"
+                       autoplay muted loop playsinline aria-hidden="true"></video>
               @else
                 <img src="{{ asset('storage/'.$slide->media_path) }}" alt=""
+                     style="width: {{ $slide->media_scale ?? 90 }}%; height: {{ $slide->media_scale ?? 90 }}%"
                      @if ($loop->index < 2) fetchpriority="high" @else loading="lazy" decoding="async" @endif>
               @endif
             @else

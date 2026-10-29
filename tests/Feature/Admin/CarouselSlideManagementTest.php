@@ -32,6 +32,7 @@ class CarouselSlideManagementTest extends TestCase
             'media_type' => 'image',
             'media' => UploadedFile::fake()->image('product.png'),
             'background_color' => '#F5F0E6',
+            'media_scale' => 70,
             'headline' => 'Kitchen Essentials',
         ]);
 
@@ -40,6 +41,7 @@ class CarouselSlideManagementTest extends TestCase
         $slide = CarouselSlide::firstWhere('headline', 'Kitchen Essentials');
         $this->assertNotNull($slide);
         $this->assertSame('#F5F0E6', $slide->background_color);
+        $this->assertSame(70, $slide->media_scale);
         Storage::disk('public')->assertExists($slide->media_path);
     }
 }

@@ -101,9 +101,15 @@
                                                 <label class="form-label small">Replace File <span class="text-muted-slate">(optional — leave empty to keep current)</span></label>
                                                 <input type="file" name="media" class="form-control" accept="image/*,video/mp4">
                                             </div>
-                                            <div class="col-12">
+                                            <div class="col-md-6">
                                                 <label class="form-label small">Card Background Color</label>
                                                 <input type="color" name="background_color" class="form-control form-control-color" value="{{ $slide->background_color ?: '#DBEAFE' }}">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label small">Image/Video Size <span class="text-muted-slate" id="mediaScaleValue{{ $slide->id }}">{{ $slide->media_scale ?? 90 }}%</span></label>
+                                                <input type="range" name="media_scale" class="form-range" min="30" max="100" step="5"
+                                                       value="{{ $slide->media_scale ?? 90 }}"
+                                                       oninput="document.getElementById('mediaScaleValue{{ $slide->id }}').textContent = this.value + '%'">
                                             </div>
                                             <div class="col-12"><hr class="my-1"></div>
                                             <div class="col-12">
@@ -178,9 +184,14 @@
                                 <label class="form-label small">Upload File <span class="text-muted-slate">(transparent-background product image recommended)</span></label>
                                 <input type="file" name="media" class="form-control" accept="image/*,video/mp4" required>
                             </div>
-                            <div class="col-12">
+                            <div class="col-md-6">
                                 <label class="form-label small">Card Background Color</label>
                                 <input type="color" name="background_color" class="form-control form-control-color" value="#DBEAFE">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small">Image/Video Size <span class="text-muted-slate" id="mediaScaleValueNew">90%</span></label>
+                                <input type="range" name="media_scale" class="form-range" min="30" max="100" step="5" value="90"
+                                       oninput="document.getElementById('mediaScaleValueNew').textContent = this.value + '%'">
                             </div>
                             <div class="col-12"><hr class="my-1"></div>
                             <div class="col-12">
