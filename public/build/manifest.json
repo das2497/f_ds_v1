@@ -1,0 +1,75 @@
+{
+  "_chart-CyiRuMrX.js": {
+    "file": "assets/chart-CyiRuMrX.js",
+    "name": "chart"
+  },
+  "_chartjs-plugin-datalabels.esm-xSqVLvv5.js": {
+    "file": "assets/chartjs-plugin-datalabels.esm-xSqVLvv5.js",
+    "name": "chartjs-plugin-datalabels.esm",
+    "imports": [
+      "_chart-CyiRuMrX.js"
+    ]
+  },
+  "node_modules/bootstrap-icons/font/fonts/bootstrap-icons.woff": {
+    "file": "assets/bootstrap-icons-BHUGvtHM.woff",
+    "src": "node_modules/bootstrap-icons/font/fonts/bootstrap-icons.woff"
+  },
+  "node_modules/bootstrap-icons/font/fonts/bootstrap-icons.woff2": {
+    "file": "assets/bootstrap-icons-DJdhg9lH.woff2",
+    "src": "node_modules/bootstrap-icons/font/fonts/bootstrap-icons.woff2"
+  },
+  "resources/css/app.css": {
+    "file": "assets/app-N-EsXImY.css",
+    "name": "app",
+    "names": [
+      "app.css"
+    ],
+    "src": "resources/css/app.css",
+    "isEntry": true,
+    "assets": [
+      "assets/bootstrap-icons-DJdhg9lH.woff2",
+      "assets/bootstrap-icons-BHUGvtHM.woff"
+    ]
+  },
+  "resources/js/ai-research-chat.js": {
+    "file": "assets/ai-research-chat--m68ZSv9.js",
+    "name": "ai-research-chat",
+    "src": "resources/js/ai-research-chat.js",
+    "isEntry": true
+  },
+  "resources/js/app.js": {
+    "file": "assets/app-B4zAcVNg.js",
+    "name": "app",
+    "src": "resources/js/app.js",
+    "isEntry": true
+  },
+  "resources/js/charts-dashboard.js": {
+    "file": "assets/charts-dashboard-DxnriW3W.js",
+    "name": "charts-dashboard",
+    "src": "resources/js/charts-dashboard.js",
+    "isEntry": true,
+    "imports": [
+      "_chart-CyiRuMrX.js"
+    ]
+  },
+  "resources/js/charts-demand.js": {
+    "file": "assets/charts-demand-CpKjfXH-.js",
+    "name": "charts-demand",
+    "src": "resources/js/charts-demand.js",
+    "isEntry": true,
+    "imports": [
+      "_chart-CyiRuMrX.js",
+      "_chartjs-plugin-datalabels.esm-xSqVLvv5.js"
+    ]
+  },
+  "resources/js/charts-utm.js": {
+    "file": "assets/charts-utm-C7iJPYty.js",
+    "name": "charts-utm",
+    "src": "resources/js/charts-utm.js",
+    "isEntry": true,
+    "imports": [
+      "_chart-CyiRuMrX.js",
+      "_chartjs-plugin-datalabels.esm-xSqVLvv5.js"
+    ]
+  }
+}
