@@ -25,6 +25,7 @@ class CarouselSlideController extends Controller
         if ($request->hasFile('media')) {
             $validated['media_path'] = $request->file('media')->store('carousel', 'public');
         }
+        
 
         unset($validated['media']);
 
