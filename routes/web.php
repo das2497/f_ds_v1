@@ -177,4 +177,9 @@ Route::get('/link', function() {
     return "Storage link created successfully!";
 });
 
+Route::get('/migrate', function() {
+    Artisan::call('migrate --force');
+    return "Database tables migrated successfully!";
+});
+
 require __DIR__.'/auth.php';
