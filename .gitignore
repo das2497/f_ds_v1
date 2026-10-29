@@ -3,7 +3,7 @@
 .env
 .env.backup
 .env.production.example
-.env.example #
+.env.example 
 .phpactor.json
 .phpunit.result.cache
 /.claude
