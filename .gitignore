@@ -16,10 +16,6 @@
 /.zed
 /auth.json
 /node_modules
-
-
-
-
 /storage/*.key
 /storage/pail
 /vendor
