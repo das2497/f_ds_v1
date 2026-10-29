@@ -16,9 +16,6 @@
 /.zed
 /auth.json
 /node_modules
-/public/build
-/public/hot
-/public/storage
 /vendor
 _ide_helper.php
 Homestead.json
