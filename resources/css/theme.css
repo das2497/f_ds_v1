@@ -254,54 +254,72 @@ body {
   letter-spacing: 0.02em;
 }
 
-/* ---------- Hero Carousel (fixed dimensions — admin uploads image/video here) ---------- */
+/* ---------- Category Carousel (Amazon-style cards — admin sets a background
+   color + product image/video per card; cards sit in a row that shrinks to
+   a horizontal scroller once they no longer fit) ---------- */
 
-.hero-carousel .carousel-slide-media {
+.category-carousel-track {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(170px, 1fr);
+  gap: 1rem;
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+}
+.category-card {
   position: relative;
-  width: 100%;
-  aspect-ratio: 21 / 7;
+  display: flex;
+  flex-direction: column;
+  aspect-ratio: 3 / 4;
+  border-radius: var(--radius-card);
   overflow: hidden;
-  background: var(--color-bg);
+  padding: 1.25rem 1.25rem 0;
+  text-decoration: none;
+  scroll-snap-align: start;
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
 }
-@media (max-width: 767.98px) {
-  .hero-carousel .carousel-slide-media { aspect-ratio: 4 / 3; }
+.category-card:hover,
+.category-card:focus-visible {
+  box-shadow: 0 10px 24px -8px rgba(15, 23, 42, 0.25);
+  transform: translateY(-2px);
 }
-.hero-carousel .carousel-slide-media img,
-.hero-carousel .carousel-slide-media video {
+.category-card-title {
+  display: block;
+  max-width: 88%;
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 1.05rem;
+  line-height: 1.25;
+  color: #0F172A;
+}
+.category-card-media {
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  margin-top: 0.75rem;
+  overflow: hidden;
+}
+.category-card-media img,
+.category-card-media video {
   width: 100%;
-  height: 100%;
-  object-fit: cover;
+  height: 90%;
+  object-fit: contain;
+  object-position: bottom center;
   display: block;
 }
-.hero-carousel .carousel-slide-overlay {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  background: linear-gradient(90deg, rgba(17,24,39,0.68) 0%, rgba(17,24,39,0.38) 48%, rgba(17,24,39,0.05) 85%);
+.category-card .ph-icon-wrap {
+  width: 100%;
+  height: 90%;
+  background: transparent;
 }
-.hero-carousel .carousel-slide-overlay .overlay-content {
-  max-width: 480px;
-  padding: 0 2rem;
-  color: #fff;
-}
-.hero-carousel .carousel-slide-overlay .eyebrow-text { color: #93c5fd; }
 @media (max-width: 575.98px) {
-  .hero-carousel .carousel-slide-media { aspect-ratio: 3 / 4; }
-  .hero-carousel .carousel-slide-overlay { background: linear-gradient(180deg, rgba(17,24,39,0.72) 0%, rgba(17,24,39,0.5) 60%, rgba(17,24,39,0.25) 100%); align-items: flex-start; padding-top: 1.5rem; }
-  .hero-carousel .carousel-slide-overlay .overlay-content { padding: 0 1.25rem; max-width: 100%; }
-  .hero-carousel .carousel-slide-overlay .overlay-content .fs-5,
-  .hero-carousel .carousel-slide-overlay .overlay-content p { font-size: 0.92rem; }
-  .hero-carousel .carousel-slide-overlay .overlay-content h1,
-  .hero-carousel .carousel-slide-overlay .overlay-content .hero-headline { font-size: 1.6rem; }
+  .category-carousel-track { grid-auto-columns: minmax(140px, 1fr); gap: 0.75rem; }
+  .category-card { padding: 1rem 1rem 0; }
+  .category-card-title { font-size: 0.92rem; }
 }
-.hero-carousel .carousel-control-prev,
-.hero-carousel .carousel-control-next { width: 6%; opacity: 0.85; }
-.hero-carousel .carousel-indicators { bottom: 0.75rem; }
-.hero-carousel .carousel-indicators [data-bs-target] {
-  width: 8px; height: 8px; border-radius: 50%; background: #fff; opacity: 0.6; margin: 0 4px;
-}
-.hero-carousel .carousel-indicators .active { opacity: 1; width: 22px; border-radius: 4px; }
 
 .hero-trust-row {
   background: var(--color-surface);
@@ -1562,24 +1580,8 @@ html[data-theme="dark"] .admin-body .text-dark:not(.bg-light) {
   box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.18);
 }
 .site-topbar :focus-visible,
-.carousel-slide-overlay :focus-visible,
 .footer-newsletter :focus-visible {
   outline-color: #fff;
-}
-
-/* ---------- Hero headline ----------
-   Non-first carousel slides render as .hero-headline rather than <h1> so
-   the page keeps exactly one top-level heading. */
-
-.hero-carousel .carousel-slide-overlay .overlay-content .hero-headline {
-  font-family: var(--font-heading);
-  font-size: calc(1.425rem + 2.1vw);
-  font-weight: 700;
-  line-height: 1.2;
-  color: #fff;
-}
-@media (min-width: 1200px) {
-  .hero-carousel .carousel-slide-overlay .overlay-content .hero-headline { font-size: 3rem; }
 }
 
 /* ---------- Headings that stay on the body font ----------

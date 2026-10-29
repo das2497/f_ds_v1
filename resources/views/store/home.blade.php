@@ -17,73 +17,34 @@
     :schema="$homeSchema">
 
 @if ($slides->isNotEmpty())
-<section class="hero-carousel" aria-label="Featured promotions">
-  <div id="heroCarousel" class="carousel slide" data-bs-ride="carousel">
-    <div class="carousel-inner">
+<section class="category-carousel-section py-4" aria-label="Featured categories">
+  {{-- The slides carry no visible intro copy of their own, so the page's
+       single <h1> lives here, visually hidden, ahead of the cards. --}}
+  <h1 class="visually-hidden">{{ config('store.tagline') }}</h1>
+  <div class="container">
+    <div class="category-carousel-track">
       @foreach ($slides as $slide)
-        <div class="carousel-item @if ($loop->first) active @endif"
-             role="group" aria-roledescription="slide"
-             aria-label="Slide {{ $loop->iteration }} of {{ $slides->count() }}">
-          <div class="carousel-slide-media">
+        <a href="{{ $slide->cta_link ?: route('products.index') }}"
+           class="category-card"
+           style="background-color: {{ $slide->background_color ?: '#DBEAFE' }}">
+          <span class="category-card-title">{{ $slide->headline }}</span>
+          <span class="category-card-media">
             @if ($slide->media_path)
               @if ($slide->media_type === 'video')
-                <video src="{{ asset('storage/'.$slide->media_path) }}" autoplay muted loop playsinline
-                       aria-label="{{ $slide->headline }}"></video>
+                <video src="{{ asset('storage/'.$slide->media_path) }}" autoplay muted loop playsinline aria-hidden="true"></video>
               @else
-                <img src="{{ asset('storage/'.$slide->media_path) }}" alt="{{ $slide->headline }}"
-                     width="1600" height="533"
-                     @if ($loop->first) fetchpriority="high" @else loading="lazy" decoding="async" @endif>
+                <img src="{{ asset('storage/'.$slide->media_path) }}" alt=""
+                     @if ($loop->index < 2) fetchpriority="high" @else loading="lazy" decoding="async" @endif>
               @endif
             @else
-              <div class="ph-icon-wrap ph-icon-hero" role="img" aria-label="{{ $slide->headline }}">
-                <i class="bi {{ $slide->media_type === 'video' ? 'bi-play-circle' : 'bi-bag-heart' }}" aria-hidden="true"></i>
-                <span>{{ $slide->media_type === 'video' ? 'Video slide' : 'Image slide' }} — 1600&times;533 recommended</span>
-              </div>
+              <span class="ph-icon-wrap ph-icon-sm" aria-hidden="true">
+                <i class="bi {{ $slide->media_type === 'video' ? 'bi-play-circle' : 'bi-bag-heart' }}"></i>
+              </span>
             @endif
-            <div class="carousel-slide-overlay">
-              <div class="overlay-content">
-                @if ($slide->eyebrow_text)
-                  <div class="eyebrow-text">{{ $slide->eyebrow_text }}</div>
-                @endif
-                {{-- Only the first slide is the page's <h1>; the rest are styled
-                     to match so the document keeps a single top-level heading. --}}
-                @if ($loop->first)
-                  <h1 class="display-5 fw-bold mb-2">{{ $slide->headline }}</h1>
-                @else
-                  <p class="hero-headline mb-2">{{ $slide->headline }}</p>
-                @endif
-                @if ($slide->subtext)
-                  <p class="mb-4" style="color:#e2e8f0">{{ $slide->subtext }}</p>
-                @endif
-                @if ($slide->cta_label)
-                  <a href="{{ $slide->cta_link ?: route('products.index') }}" class="btn btn-accent btn-lg">
-                    {{ $slide->cta_label }} <i class="bi bi-arrow-right" aria-hidden="true"></i>
-                  </a>
-                @endif
-              </div>
-            </div>
-          </div>
-        </div>
+          </span>
+        </a>
       @endforeach
     </div>
-    @if ($slides->count() > 1)
-      <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev">
-        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-        <span class="visually-hidden">Previous slide</span>
-      </button>
-      <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next">
-        <span class="carousel-control-next-icon" aria-hidden="true"></span>
-        <span class="visually-hidden">Next slide</span>
-      </button>
-      <div class="carousel-indicators">
-        @foreach ($slides as $slide)
-          <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="{{ $loop->index }}"
-                  class="@if ($loop->first) active @endif"
-                  aria-label="Go to slide {{ $loop->iteration }}: {{ $slide->headline }}"
-                  @if ($loop->first) aria-current="true" @endif></button>
-        @endforeach
-      </div>
-    @endif
   </div>
 </section>
 @else

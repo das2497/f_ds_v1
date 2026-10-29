@@ -15,6 +15,7 @@ class CarouselSlideSeeder extends Seeder
         $slides = [
             [
                 'media_type' => 'image',
+                'background_color' => '#DBEAFE',
                 'eyebrow_text' => 'SHOP SMART • LIVE BETTER',
                 'headline' => 'Quality Products for a Smarter You.',
                 'subtext' => 'Top brands. Great value. Fast & reliable delivery across USA.',
@@ -25,6 +26,7 @@ class CarouselSlideSeeder extends Seeder
             ],
             [
                 'media_type' => 'video',
+                'background_color' => '#F5F0E6',
                 'eyebrow_text' => 'NEW ARRIVALS',
                 'headline' => 'Discover More. Shop Smarter.',
                 'subtext' => 'Quality products, great value & a seamless online shopping experience.',
@@ -35,6 +37,7 @@ class CarouselSlideSeeder extends Seeder
             ],
             [
                 'media_type' => 'image',
+                'background_color' => '#E9E3F5',
                 'eyebrow_text' => 'LIMITED TIME',
                 'headline' => 'Holiday Deals Are Here',
                 'subtext' => null,

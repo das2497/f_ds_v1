@@ -104,6 +104,7 @@ class CarouselSlideController extends Controller
                     }
                 },
             ],
+            'background_color' => ['nullable', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'eyebrow_text' => ['nullable', 'string', 'max:100'],
             'headline' => ['required', 'string', 'max:255'],
             'subtext' => ['nullable', 'string', 'max:500'],

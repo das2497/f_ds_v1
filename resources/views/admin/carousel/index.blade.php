@@ -6,7 +6,7 @@
     <div class="card-surface p-3 mb-3 d-flex flex-row align-items-start gap-2">
         <i class="bi bi-info-circle text-accent"></i>
         <div class="small text-muted-slate">
-            All slides display at the <strong>same fixed size</strong> on the homepage (recommended <strong>1600 &times; 533px</strong>, 21:7 ratio — mobile crops to 4:3). Upload an <strong>image</strong> (JPG/PNG, max 3 MB) or a <strong>video</strong> (MP4, max 15 MB) — whichever you upload fills the same frame automatically, so slides never jump in size.
+            Slides show on the homepage as <strong>Amazon-style category cards</strong> side by side. Pick a <strong>background color</strong> per card and upload a <strong>product image</strong> (ideally a transparent-background PNG/WEBP, square-ish, max 3&nbsp;MB) or a <strong>video</strong> (MP4, max 15&nbsp;MB) — it sits on top of the card's background color, so no cropping happens.
         </div>
     </div>
 
@@ -17,7 +17,7 @@
     <div class="table-admin p-3">
         <table class="table table-admin align-middle mb-0">
             <thead>
-                <tr><th style="width:40px"></th><th>Preview</th><th>Type</th><th>Headline</th><th>CTA</th><th>Status</th><th></th></tr>
+                <tr><th style="width:40px"></th><th>Preview</th><th>Color</th><th>Type</th><th>Headline</th><th>CTA</th><th>Status</th><th></th></tr>
             </thead>
             <tbody>
                 @forelse ($slides as $slide)
@@ -30,15 +30,20 @@
                             </form>
                         </td>
                         <td>
-                            @if ($slide->media_path)
-                                @if ($slide->media_type === 'video')
-                                    <video src="{{ asset('storage/'.$slide->media_path) }}" style="width:96px;height:48px;object-fit:cover" muted></video>
+                            <div style="width:96px;height:48px;border-radius:6px;background:{{ $slide->background_color ?: '#DBEAFE' }};display:flex;align-items:center;justify-content:center;overflow:hidden">
+                                @if ($slide->media_path)
+                                    @if ($slide->media_type === 'video')
+                                        <video src="{{ asset('storage/'.$slide->media_path) }}" style="width:100%;height:100%;object-fit:contain" muted></video>
+                                    @else
+                                        <img src="{{ asset('storage/'.$slide->media_path) }}" style="width:100%;height:100%;object-fit:contain">
+                                    @endif
                                 @else
-                                    <img src="{{ asset('storage/'.$slide->media_path) }}" style="width:96px;height:48px;object-fit:cover;border-radius:6px">
+                                    <i class="bi {{ $slide->media_type === 'video' ? 'bi-play-circle' : 'bi-image' }}" style="font-size:1.4rem;opacity:0.5"></i>
                                 @endif
-                            @else
-                                <div class="ph-icon-wrap rounded-3" style="width:96px;height:48px"><i class="bi {{ $slide->media_type === 'video' ? 'bi-play-circle' : 'bi-image' }}" style="font-size:1.4rem"></i></div>
-                            @endif
+                            </div>
+                        </td>
+                        <td>
+                            <span class="d-inline-block rounded-circle" style="width:20px;height:20px;background:{{ $slide->background_color ?: '#DBEAFE' }};border:1px solid var(--color-border)" title="{{ $slide->background_color }}"></span>
                         </td>
                         <td>
                             @if ($slide->media_type === 'video')
@@ -95,6 +100,10 @@
                                             <div class="col-12">
                                                 <label class="form-label small">Replace File <span class="text-muted-slate">(optional — leave empty to keep current)</span></label>
                                                 <input type="file" name="media" class="form-control" accept="image/*,video/mp4">
+                                            </div>
+                                            <div class="col-12">
+                                                <label class="form-label small">Card Background Color</label>
+                                                <input type="color" name="background_color" class="form-control form-control-color" value="{{ $slide->background_color ?: '#DBEAFE' }}">
                                             </div>
                                             <div class="col-12"><hr class="my-1"></div>
                                             <div class="col-12">
@@ -166,8 +175,12 @@
                                 </div>
                             </div>
                             <div class="col-12">
-                                <label class="form-label small">Upload File <span class="text-muted-slate">(1600&times;533px recommended)</span></label>
+                                <label class="form-label small">Upload File <span class="text-muted-slate">(transparent-background product image recommended)</span></label>
                                 <input type="file" name="media" class="form-control" accept="image/*,video/mp4" required>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label small">Card Background Color</label>
+                                <input type="color" name="background_color" class="form-control form-control-color" value="#DBEAFE">
                             </div>
                             <div class="col-12"><hr class="my-1"></div>
                             <div class="col-12">
