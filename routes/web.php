@@ -31,6 +31,7 @@ use App\Http\Controllers\RobotsController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\StripeWebhookController;
 use App\Http\Controllers\WishlistController;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -163,6 +164,17 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:super-admin'])
     Route::post('/maintenance/backup', [AdminMaintenanceController::class, 'backup'])->name('maintenance.backup');
     Route::get('/maintenance/backups/{filename}', [AdminMaintenanceController::class, 'downloadBackup'])->name('maintenance.backups.download');
     Route::post('/maintenance/failed-jobs/{uuid}/retry', [AdminMaintenanceController::class, 'retryFailedJob'])->name('maintenance.failed-jobs.retry');
+});
+
+Route::get('/clear', function() {
+    Artisan::call('config:clear');
+    Artisan::call('cache:clear');
+    return "Cache cleared successfully!";
+});
+
+Route::get('/link', function() {
+    Artisan::call('storage:link');
+    return "Storage link created successfully!";
 });
 
 require __DIR__.'/auth.php';
