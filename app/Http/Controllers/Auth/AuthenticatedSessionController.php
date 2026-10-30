@@ -31,9 +31,7 @@ class AuthenticatedSessionController extends Controller
 
         $cartResolver->mergeGuestCartIntoUser($request, $request->user());
 
-        $homeRoute = Auth::user()->hasAnyRole(['admin', 'super-admin']) ? 'admin.dashboard' : 'account.dashboard';
-
-        return redirect()->intended(route($homeRoute, absolute: false));
+        return redirect()->intended(route(Auth::user()->homeRouteName(), absolute: false));
     }
 
     /**

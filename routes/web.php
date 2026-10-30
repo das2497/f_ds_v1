@@ -67,8 +67,10 @@ Route::view('/policies/shipping-refund', 'store.policies.shipping-refund')->name
 Route::get('/sitemap.xml', SitemapController::class)->name('sitemap');
 Route::get('/robots.txt', RobotsController::class)->name('robots');
 
+// Legacy Breeze scaffold URL — kept only so old bookmarks/links land on the
+// visitor's real (themed) dashboard instead of the unstyled stub view.
 Route::get('/dashboard', function () {
-    return view('dashboard');
+    return redirect()->route(auth()->user()->homeRouteName());
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
@@ -101,6 +103,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin|super-ad
     Route::delete('/subcategories/{subcategory}', [SubcategoryController::class, 'destroy'])->name('subcategories.destroy');
 
     Route::get('/carousel', [CarouselSlideController::class, 'index'])->name('carousel.index');
+    Route::put('/carousel/settings', [CarouselSlideController::class, 'updateSettings'])->name('carousel.settings.update');
+    Route::put('/carousel/bulk-dimensions', [CarouselSlideController::class, 'bulkUpdateDimensions'])->name('carousel.bulk-dimensions.update');
     Route::post('/carousel', [CarouselSlideController::class, 'store'])->name('carousel.store');
     Route::put('/carousel/{carousel}', [CarouselSlideController::class, 'update'])->name('carousel.update');
     Route::delete('/carousel/{carousel}', [CarouselSlideController::class, 'destroy'])->name('carousel.destroy');
@@ -166,20 +170,23 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:super-admin'])
     Route::post('/maintenance/failed-jobs/{uuid}/retry', [AdminMaintenanceController::class, 'retryFailedJob'])->name('maintenance.failed-jobs.retry');
 });
 
-Route::get('/clear', function() {
+Route::get('/clear', function () {
     Artisan::call('config:clear');
     Artisan::call('cache:clear');
-    return "Cache cleared successfully!";
+
+    return 'Cache cleared successfully!';
 });
 
-Route::get('/link', function() {
+Route::get('/link', function () {
     Artisan::call('storage:link');
-    return "Storage link created successfully!";
+
+    return 'Storage link created successfully!';
 });
 
-Route::get('/migrate', function() {
+Route::get('/migrate', function () {
     Artisan::call('migrate --force');
-    return "Database tables migrated successfully!";
+
+    return 'Database tables migrated successfully!';
 });
 
 require __DIR__.'/auth.php';

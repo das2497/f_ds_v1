@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AppSetting;
 use App\Models\CarouselSlide;
 use App\Models\Product;
 use Illuminate\View\View;
@@ -14,12 +15,15 @@ class HomeController extends Controller
             ->orderBy('sort_order')
             ->get();
 
+        $carouselWidth = AppSetting::getInt('carousel.width');
+        $carouselHeight = AppSetting::getInt('carousel.height');
+
         $featuredProducts = Product::with('variants')
             ->where('is_active', true)
             ->latest()
             ->limit(8)
             ->get();
 
-        return view('store.home', compact('slides', 'featuredProducts'));
+        return view('store.home', compact('slides', 'carouselWidth', 'carouselHeight', 'featuredProducts'));
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\AppSetting;
 use App\Models\CarouselSlide;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -14,8 +15,38 @@ class CarouselSlideController extends Controller
     public function index(): View
     {
         $slides = CarouselSlide::orderBy('sort_order')->get();
+        $carouselWidth = AppSetting::getInt('carousel.width');
+        $carouselHeight = AppSetting::getInt('carousel.height');
 
-        return view('admin.carousel.index', compact('slides'));
+        return view('admin.carousel.index', compact('slides', 'carouselWidth', 'carouselHeight'));
+    }
+
+    public function updateSettings(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'carousel_width' => ['nullable', 'integer', 'min:100', 'max:900'],
+            'carousel_height' => ['nullable', 'integer', 'min:80', 'max:900'],
+        ]);
+
+        AppSetting::set('carousel.width', isset($validated['carousel_width']) ? (int) $validated['carousel_width'] : null);
+        AppSetting::set('carousel.height', isset($validated['carousel_height']) ? (int) $validated['carousel_height'] : null);
+
+        return back()->with('status', 'Carousel settings updated.');
+    }
+
+    public function bulkUpdateDimensions(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'bulk_media_width' => ['required', 'integer', 'min:50', 'max:2000'],
+            'bulk_media_height' => ['required', 'integer', 'min:50', 'max:2000'],
+        ]);
+
+        CarouselSlide::query()->update([
+            'media_width' => $validated['bulk_media_width'],
+            'media_height' => $validated['bulk_media_height'],
+        ]);
+
+        return back()->with('status', 'Width & height applied to every slide.');
     }
 
     public function store(Request $request): RedirectResponse
@@ -104,10 +135,8 @@ class CarouselSlideController extends Controller
                 },
             ],
             'background_color' => ['nullable', 'regex:/^#[0-9A-Fa-f]{6}$/'],
-            'media_scale' => ['nullable', 'integer', 'min:30', 'max:100'],
-            'eyebrow_text' => ['nullable', 'string', 'max:100'],
-            'headline' => ['required', 'string', 'max:255'],
-            'subtext' => ['nullable', 'string', 'max:500'],
+            'media_width' => ['nullable', 'integer', 'min:50', 'max:2000'],
+            'media_height' => ['nullable', 'integer', 'min:50', 'max:2000'],
             'cta_label' => ['nullable', 'string', 'max:50'],
             'cta_link' => ['nullable', 'string', 'max:255'],
             'is_active' => ['nullable', 'boolean'],

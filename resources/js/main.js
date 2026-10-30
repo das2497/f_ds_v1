@@ -29,6 +29,44 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
+  // Homepage category carousel — prev/next arrows scroll the card track,
+  // and hide themselves once there's nothing left to scroll toward.
+  document.querySelectorAll("[data-carousel]").forEach(function (carousel) {
+    var track = carousel.querySelector("[data-carousel-track]");
+    var prev = carousel.querySelector("[data-carousel-prev]");
+    var next = carousel.querySelector("[data-carousel-next]");
+    if (!track || !prev || !next) return;
+
+    var scrollByCard = function (direction) {
+      var card = track.querySelector(".category-card");
+      var step = card ? card.getBoundingClientRect().width + 16 : track.clientWidth * 0.8;
+      track.scrollBy({ left: direction * step, behavior: "smooth" });
+    };
+    prev.addEventListener("click", function () { scrollByCard(-1); });
+    next.addEventListener("click", function () { scrollByCard(1); });
+
+    // Left/right arrow keys move one card at a time once the track has focus
+    // (e.g. after tabbing to a card), matching standard carousel behavior.
+    track.addEventListener("keydown", function (e) {
+      if (e.key === "ArrowRight") { e.preventDefault(); scrollByCard(1); }
+      if (e.key === "ArrowLeft") { e.preventDefault(); scrollByCard(-1); }
+    });
+
+    var syncArrows = function () {
+      var maxScroll = track.scrollWidth - track.clientWidth;
+      var atStart = track.scrollLeft <= 1;
+      var atEnd = track.scrollLeft >= maxScroll - 1;
+      carousel.classList.toggle("has-overflow", maxScroll > 1);
+      carousel.classList.toggle("can-scroll-left", !atStart);
+      carousel.classList.toggle("can-scroll-right", !atEnd && maxScroll > 1);
+      prev.disabled = atStart;
+      next.disabled = atEnd;
+    };
+    syncArrows();
+    track.addEventListener("scroll", syncArrows, { passive: true });
+    window.addEventListener("resize", syncArrows);
+  });
+
   // Back-to-top button
   var backToTop = document.querySelector("[data-action='back-to-top']");
   if (backToTop) {

@@ -47,4 +47,12 @@ class User extends Authenticatable
     {
         return $this->hasMany(Wishlist::class);
     }
+
+    /**
+     * The named route this user lands on after authenticating.
+     */
+    public function homeRouteName(): string
+    {
+        return $this->hasAnyRole(['admin', 'super-admin']) ? 'admin.dashboard' : 'account.dashboard';
+    }
 }

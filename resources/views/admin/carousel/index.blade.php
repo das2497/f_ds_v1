@@ -6,8 +6,49 @@
     <div class="card-surface p-3 mb-3 d-flex flex-row align-items-start gap-2">
         <i class="bi bi-info-circle text-accent"></i>
         <div class="small text-muted-slate">
-            Slides show on the homepage as <strong>Amazon-style category cards</strong> side by side. Pick a <strong>background color</strong> per card and upload a <strong>product image</strong> (ideally a transparent-background PNG/WEBP, square-ish, max 3&nbsp;MB) or a <strong>video</strong> (MP4, max 15&nbsp;MB) — it sits on top of the card's background color, so no cropping happens.
+            Slides show on the homepage as <strong>Amazon-style category cards</strong> side by side. Pick a <strong>background color</strong>, set the <strong>image width &amp; height (px)</strong> you want it cropped to, and upload a <strong>product image</strong> (JPG/PNG/WEBP, max 3&nbsp;MB) or a <strong>video</strong> (MP4, max 15&nbsp;MB) — it fills that exact size, cropped to fit.
         </div>
+    </div>
+
+    <div class="card-surface p-3 mb-3">
+        <form action="{{ route('admin.carousel.settings.update') }}" method="POST" class="row g-3 align-items-end">
+            @csrf @method('PUT')
+            <div class="col-auto">
+                <label class="form-label small mb-1">Carousel Width (px)</label>
+                <input type="number" name="carousel_width" class="form-control" style="width:140px" min="100" max="900" step="10" value="{{ $carouselWidth }}" placeholder="Auto">
+            </div>
+            <div class="col-auto">
+                <label class="form-label small mb-1">Carousel Height (px)</label>
+                <input type="number" name="carousel_height" class="form-control" style="width:140px" min="80" max="900" step="10" value="{{ $carouselHeight }}" placeholder="Auto">
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-outline-accent btn-sm">Save Size</button>
+            </div>
+            <div class="col-12">
+                <div class="small text-muted-slate">Sets one fixed card size for every slide at once, overriding each slide's own width/height. Leave a field empty to size cards from each slide's own image width/height instead.</div>
+            </div>
+        </form>
+    </div>
+
+    <div class="card-surface p-3 mb-3">
+        <form action="{{ route('admin.carousel.bulk-dimensions.update') }}" method="POST" class="row g-3 align-items-end"
+              onsubmit="return confirm('Apply this width &amp; height to every slide? Each slide\'s own current width/height will be overwritten.');">
+            @csrf @method('PUT')
+            <div class="col-auto">
+                <label class="form-label small mb-1">Width (px)</label>
+                <input type="number" name="bulk_media_width" class="form-control" style="width:120px" min="50" max="2000" step="10" value="300" required>
+            </div>
+            <div class="col-auto">
+                <label class="form-label small mb-1">Height (px)</label>
+                <input type="number" name="bulk_media_height" class="form-control" style="width:120px" min="50" max="2000" step="10" value="300" required>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-outline-accent btn-sm">Apply to All Slides</button>
+            </div>
+            <div class="col-12">
+                <div class="small text-muted-slate">Overwrites the width &amp; height on every existing slide at once, instead of editing them one by one.</div>
+            </div>
+        </form>
     </div>
 
     <div class="d-flex justify-content-end mb-3">
@@ -17,7 +58,7 @@
     <div class="table-admin p-3">
         <table class="table table-admin align-middle mb-0">
             <thead>
-                <tr><th style="width:40px"></th><th>Preview</th><th>Color</th><th>Type</th><th>Headline</th><th>CTA</th><th>Status</th><th></th></tr>
+                <tr><th style="width:40px"></th><th>Preview</th><th>Color</th><th>Type</th><th>Links to</th><th>Status</th><th></th></tr>
             </thead>
             <tbody>
                 @forelse ($slides as $slide)
@@ -52,11 +93,7 @@
                                 <span class="badge rounded-pill" style="background:#DBEAFE;color:#1E40AF"><i class="bi bi-image me-1"></i>Image</span>
                             @endif
                         </td>
-                        <td>
-                            <div class="fw-semibold small">{{ $slide->headline }}</div>
-                            <div class="small text-muted-slate">{{ $slide->eyebrow_text }}</div>
-                        </td>
-                        <td class="small">{{ $slide->cta_label }} &rarr; {{ $slide->cta_link }}</td>
+                        <td class="small">{{ $slide->cta_link ?: '—' }}</td>
                         <td>
                             @if ($slide->is_active)
                                 <span class="badge-status-paid">Active</span>
@@ -105,25 +142,15 @@
                                                 <label class="form-label small">Card Background Color</label>
                                                 <input type="color" name="background_color" class="form-control form-control-color" value="{{ $slide->background_color ?: '#DBEAFE' }}">
                                             </div>
-                                            <div class="col-md-6">
-                                                <label class="form-label small">Image/Video Size <span class="text-muted-slate" id="mediaScaleValue{{ $slide->id }}">{{ $slide->media_scale ?? 90 }}%</span></label>
-                                                <input type="range" name="media_scale" class="form-range" min="30" max="100" step="5"
-                                                       value="{{ $slide->media_scale ?? 90 }}"
-                                                       oninput="document.getElementById('mediaScaleValue{{ $slide->id }}').textContent = this.value + '%'">
+                                            <div class="col-md-3">
+                                                <label class="form-label small">Image Width (px)</label>
+                                                <input type="number" name="media_width" class="form-control" min="50" max="2000" step="10" value="{{ $slide->media_width ?? 300 }}">
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label class="form-label small">Image Height (px)</label>
+                                                <input type="number" name="media_height" class="form-control" min="50" max="2000" step="10" value="{{ $slide->media_height ?? 300 }}">
                                             </div>
                                             <div class="col-12"><hr class="my-1"></div>
-                                            <div class="col-12">
-                                                <label class="form-label small">Eyebrow Text</label>
-                                                <input type="text" name="eyebrow_text" class="form-control" value="{{ $slide->eyebrow_text }}">
-                                            </div>
-                                            <div class="col-12">
-                                                <label class="form-label small">Headline</label>
-                                                <input type="text" name="headline" class="form-control" value="{{ $slide->headline }}" required>
-                                            </div>
-                                            <div class="col-12">
-                                                <label class="form-label small">Subtext</label>
-                                                <textarea name="subtext" class="form-control" rows="2">{{ $slide->subtext }}</textarea>
-                                            </div>
                                             <div class="col-md-6">
                                                 <label class="form-label small">CTA Button Label</label>
                                                 <input type="text" name="cta_label" class="form-control" value="{{ $slide->cta_label }}">
@@ -181,31 +208,22 @@
                                 </div>
                             </div>
                             <div class="col-12">
-                                <label class="form-label small">Upload File <span class="text-muted-slate">(transparent-background product image recommended)</span></label>
+                                <label class="form-label small">Upload File <span class="text-muted-slate">(cropped to the width/height set below)</span></label>
                                 <input type="file" name="media" class="form-control" accept="image/*,video/mp4" required>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label small">Card Background Color</label>
                                 <input type="color" name="background_color" class="form-control form-control-color" value="#DBEAFE">
                             </div>
-                            <div class="col-md-6">
-                                <label class="form-label small">Image/Video Size <span class="text-muted-slate" id="mediaScaleValueNew">90%</span></label>
-                                <input type="range" name="media_scale" class="form-range" min="30" max="100" step="5" value="90"
-                                       oninput="document.getElementById('mediaScaleValueNew').textContent = this.value + '%'">
+                            <div class="col-md-3">
+                                <label class="form-label small">Image Width (px)</label>
+                                <input type="number" name="media_width" class="form-control" min="50" max="2000" step="10" value="300">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small">Image Height (px)</label>
+                                <input type="number" name="media_height" class="form-control" min="50" max="2000" step="10" value="300">
                             </div>
                             <div class="col-12"><hr class="my-1"></div>
-                            <div class="col-12">
-                                <label class="form-label small">Eyebrow Text <span class="text-muted-slate">(optional)</span></label>
-                                <input type="text" name="eyebrow_text" class="form-control" placeholder="e.g. SHOP SMART • LIVE BETTER">
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label small">Headline</label>
-                                <input type="text" name="headline" class="form-control" placeholder="e.g. Quality Products for a Smarter You." required>
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label small">Subtext <span class="text-muted-slate">(optional)</span></label>
-                                <textarea name="subtext" class="form-control" rows="2" placeholder="Short supporting line..."></textarea>
-                            </div>
                             <div class="col-md-6">
                                 <label class="form-label small">CTA Button Label</label>
                                 <input type="text" name="cta_label" class="form-control" placeholder="Shop Now">

@@ -28,4 +28,16 @@ class AppSetting extends Model
         self::updateOrCreate(['key' => $key], ['value' => $value]);
         Cache::forget("app_setting:{$key}");
     }
+
+    /**
+     * Like get(), but coerced to an int — the encrypted cast round-trips
+     * every value through a string, so numeric settings come back as "260"
+     * rather than 260.
+     */
+    public static function getInt(string $key): ?int
+    {
+        $value = self::get($key);
+
+        return $value !== null ? (int) $value : null;
+    }
 }

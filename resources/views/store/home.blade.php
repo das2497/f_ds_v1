@@ -22,21 +22,27 @@
        single <h1> lives here, visually hidden, ahead of the cards. --}}
   <h1 class="visually-hidden">{{ config('store.tagline') }}</h1>
   <div class="container">
-    <div class="category-carousel-track">
+    <div class="category-carousel" data-carousel>
+      <button type="button" class="category-carousel-arrow category-carousel-arrow-prev" data-carousel-prev aria-label="Scroll categories left">
+        <i class="bi bi-chevron-left" aria-hidden="true"></i>
+      </button>
+      <div class="category-carousel-track" data-carousel-track tabindex="0" role="region" aria-label="Featured category cards, scrollable">
       @foreach ($slides as $slide)
+        @php
+          $cardWidth = $carouselWidth ?? $slide->media_width ?? 300;
+          $cardHeight = $carouselHeight ?? $slide->media_height ?? 300;
+        @endphp
         <a href="{{ $slide->cta_link ?: route('products.index') }}"
            class="category-card"
-           style="background-color: {{ $slide->background_color ?: '#DBEAFE' }}">
-          <span class="category-card-title">{{ $slide->headline }}</span>
-          <span class="category-card-media">
+           aria-label="{{ $slide->cta_label ?: 'Shop now' }}"
+           style="background-color: {{ $slide->background_color ?: '#DBEAFE' }}; width: {{ $cardWidth }}px">
+          <span class="category-card-media" style="height: {{ $cardHeight }}px">
             @if ($slide->media_path)
               @if ($slide->media_type === 'video')
                 <video src="{{ asset('storage/'.$slide->media_path) }}"
-                       style="width: {{ $slide->media_scale ?? 90 }}%; height: {{ $slide->media_scale ?? 90 }}%"
                        autoplay muted loop playsinline aria-hidden="true"></video>
               @else
                 <img src="{{ asset('storage/'.$slide->media_path) }}" alt=""
-                     style="width: {{ $slide->media_scale ?? 90 }}%; height: {{ $slide->media_scale ?? 90 }}%"
                      @if ($loop->index < 2) fetchpriority="high" @else loading="lazy" decoding="async" @endif>
               @endif
             @else
@@ -47,6 +53,10 @@
           </span>
         </a>
       @endforeach
+      </div>
+      <button type="button" class="category-carousel-arrow category-carousel-arrow-next" data-carousel-next aria-label="Scroll categories right">
+        <i class="bi bi-chevron-right" aria-hidden="true"></i>
+      </button>
     </div>
   </div>
 </section>
