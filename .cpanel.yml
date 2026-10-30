@@ -1,10 +1,12 @@
 ---
+# npm/node on this host can't run `npm run build` (broken alt-nodejs20 npm
+# package, see hosting support ticket) — built frontend assets
+# (public/build) are committed straight into the repo instead, so a plain
+# git pull already carries them. Only PHP-side deploy steps run here.
 deployment:
   tasks:
     - export DEPLOYPATH=/home/shobleyc/public_html/
     - /opt/cpanel/composer/bin/composer install --no-dev --optimize-autoloader --working-dir=$DEPLOYPATH
-    - /usr/local/bin/npm --prefix $DEPLOYPATH install
-    - /usr/local/bin/npm --prefix $DEPLOYPATH run build
     - /usr/local/bin/php $DEPLOYPATH/artisan migrate --force
     - /usr/local/bin/php $DEPLOYPATH/artisan config:cache
     - /usr/local/bin/php $DEPLOYPATH/artisan route:cache
