@@ -157,6 +157,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin|super-ad
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:super-admin'])->group(function () {
     Route::get('/staff', [AdminStaffController::class, 'index'])->name('staff');
     Route::post('/staff', [AdminStaffController::class, 'store'])->name('staff.store');
+    Route::put('/staff/{user}', [AdminStaffController::class, 'update'])->name('staff.update');
     Route::delete('/staff/{user}', [AdminStaffController::class, 'destroy'])->name('staff.destroy');
 
     Route::get('/settings-gateways', [AdminSettingsController::class, 'index'])->name('settings-gateways');
