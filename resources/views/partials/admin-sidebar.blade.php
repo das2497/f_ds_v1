@@ -20,6 +20,7 @@
   <nav class="nav flex-column">
     <a class="nav-link {{ request()->routeIs('admin.products') ? 'active' : '' }}" href="{{ route('admin.products') }}"><i class="bi bi-box-seam"></i> Products</a>
     <a class="nav-link {{ request()->routeIs('admin.categories.*') ? 'active' : '' }}" href="{{ route('admin.categories.index') }}"><i class="bi bi-tags"></i> Categories</a>
+    <a class="nav-link {{ request()->routeIs('admin.reviews') ? 'active' : '' }}" href="{{ route('admin.reviews') }}"><i class="bi bi-star"></i> Reviews</a>
     <a class="nav-link {{ request()->routeIs('admin.products-research-printful') ? 'active' : '' }}" href="{{ route('admin.products-research-printful') }}"><i class="bi bi-search"></i> Printful Research</a>
     <a class="nav-link {{ request()->routeIs('admin.products-research-cjd') ? 'active' : '' }}" href="{{ route('admin.products-research-cjd') }}"><i class="bi bi-search"></i> CJD Research</a>
     <a class="nav-link {{ request()->routeIs('admin.ai-research') ? 'active' : '' }}" href="{{ route('admin.ai-research') }}"><i class="bi bi-stars"></i> AI Research Assistant</a>

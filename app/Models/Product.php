@@ -68,4 +68,23 @@ class Product extends Model
     {
         return $this->belongsToMany(User::class, 'wishlists');
     }
+
+    /**
+     * @return HasMany<Review, $this>
+     */
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class);
+    }
+
+    public function isPurchasedBy(?User $user): bool
+    {
+        if (! $user) {
+            return false;
+        }
+
+        return OrderItem::whereHas('variant', fn ($q) => $q->where('product_id', $this->id))
+            ->whereHas('order', fn ($q) => $q->where('user_id', $user->id)->whereIn('status', ['paid', 'refunded']))
+            ->exists();
+    }
 }

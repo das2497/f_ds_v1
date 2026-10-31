@@ -82,7 +82,11 @@ class ProductController extends Controller
             return redirect()->route('home');
         }
 
-        $product->load(['variants' => fn ($q) => $q->where('is_active', true), 'category']);
+        $product->load([
+            'variants' => fn ($q) => $q->where('is_active', true),
+            'category',
+            'reviews' => fn ($q) => $q->with('user')->latest(),
+        ]);
 
         $related = Product::with('variants')
             ->where('is_active', true)

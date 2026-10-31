@@ -117,6 +117,8 @@ class StructuredData
             'seller' => ['@id' => url('/').'#organization'],
         ];
 
+        $reviews = $product->relationLoaded('reviews') ? $product->reviews : collect();
+
         return array_filter([
             '@context' => 'https://schema.org',
             '@type' => 'Product',
@@ -130,6 +132,11 @@ class StructuredData
                 'name' => config('store.name'),
             ],
             'offers' => $offer,
+            'aggregateRating' => $reviews->isNotEmpty() ? [
+                '@type' => 'AggregateRating',
+                'ratingValue' => number_format($reviews->avg('rating'), 1),
+                'reviewCount' => $reviews->count(),
+            ] : null,
         ], fn ($value) => $value !== null && $value !== [] && $value !== '');
     }
 

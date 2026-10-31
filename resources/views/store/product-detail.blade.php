@@ -24,6 +24,12 @@
     $percentOff = $isDiscounted ? round((1 - $product->price / $product->compare_at_price) * 100) : null;
     $isWishlisted = auth()->user()?->wishlists()->where('product_id', $product->id)->exists() ?? false;
 
+    $reviews = $product->reviews;
+    $reviewsCount = $reviews->count();
+    $averageRating = $reviewsCount ? $reviews->avg('rating') : null;
+    $canReview = $product->isPurchasedBy(auth()->user());
+    $hasReviewed = auth()->check() && $reviews->contains('user_id', auth()->id());
+
     $metaDescription = StructuredData::excerpt($product->description, 150)
         ?: $product->title.' — $'.number_format($product->price, 2).' at '.config('store.name').'. Secure Stripe checkout and fast, reliable delivery across the USA.';
 
@@ -42,6 +48,10 @@
     :schema="[StructuredData::product($product), StructuredData::breadcrumbs($crumbs)]">
 
 <main class="container py-4">
+
+  @if (session('status'))
+    <div class="alert alert-success">{{ session('status') }}</div>
+  @endif
 
   <nav aria-label="Breadcrumb" class="mb-4">
     <ol class="breadcrumb small mb-0">
@@ -221,6 +231,86 @@
     </section>
   @endif
 
+  <section class="mt-5" aria-labelledby="product-reviews" style="max-width:700px">
+    <h2 id="product-reviews" class="h5 mb-3">Customer Reviews</h2>
+
+    <div class="d-flex align-items-center gap-2 mb-4">
+      <div class="star-rating-display fs-4" aria-hidden="true">
+        @for ($i = 1; $i <= 5; $i++)
+          <i class="bi {{ $averageRating && $i <= round($averageRating) ? 'bi-star-fill' : 'bi-star' }}"></i>
+        @endfor
+      </div>
+      @if ($reviewsCount)
+        <span class="fw-semibold">{{ number_format($averageRating, 1) }}</span>
+        <span class="text-muted-slate small">({{ $reviewsCount }} review{{ $reviewsCount === 1 ? '' : 's' }})</span>
+      @else
+        <span class="text-muted-slate small">No reviews yet</span>
+      @endif
+    </div>
+
+    @forelse ($reviews as $review)
+      <div class="border-bottom pb-3 mb-3">
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+          <div>
+            <strong>{{ $review->user->name }}</strong>
+            <span class="badge bg-success-subtle text-success ms-2 small">Verified Purchase</span>
+          </div>
+          <span class="small text-muted-slate">{{ $review->created_at->format('M j, Y') }}</span>
+        </div>
+        <div class="star-rating-display my-1" aria-label="Rated {{ $review->rating }} out of 5">
+          @for ($i = 1; $i <= 5; $i++)
+            <i class="bi {{ $i <= $review->rating ? 'bi-star-fill' : 'bi-star' }}" aria-hidden="true"></i>
+          @endfor
+        </div>
+        <p class="mb-0 text-muted-slate">{{ $review->body }}</p>
+      </div>
+    @empty
+      {{-- Nothing to show here; the "No reviews yet" message above already covers it. --}}
+    @endforelse
+
+    @auth
+      @if ($hasReviewed)
+        <p class="small text-muted-slate">You've already reviewed this product.</p>
+      @elseif ($canReview)
+        <div class="card-surface p-3 mt-4">
+          <h3 class="h6 mb-3">Write a Review</h3>
+          <form action="{{ route('reviews.store', $product) }}" method="POST">
+            @csrf
+            <div class="mb-3">
+              <label class="small fw-semibold mb-2 d-block">Your Rating</label>
+              <div class="star-rating-input" data-star-input>
+                <input type="hidden" name="rating" value="{{ old('rating') }}">
+                @for ($i = 1; $i <= 5; $i++)
+                  <button type="button" class="star-input-btn" data-star="{{ $i }}" aria-label="Rate {{ $i }} star{{ $i > 1 ? 's' : '' }}">
+                    <i class="bi {{ (int) old('rating') >= $i ? 'bi-star-fill' : 'bi-star' }}" aria-hidden="true"></i>
+                  </button>
+                @endfor
+              </div>
+              @error('rating')
+                <div class="text-danger small mt-1">{{ $message }}</div>
+              @enderror
+            </div>
+            <div class="mb-3">
+              <label for="reviewBody" class="small fw-semibold mb-2 d-block">Your Review</label>
+              <textarea name="body" id="reviewBody" class="form-control @error('body') is-invalid @enderror"
+                        rows="3" maxlength="2000">{{ old('body') }}</textarea>
+              @error('body')
+                <div class="invalid-feedback">{{ $message }}</div>
+              @enderror
+            </div>
+            <button type="submit" class="btn btn-accent">Submit Review</button>
+          </form>
+        </div>
+      @else
+        <p class="small text-muted-slate">Only customers who have purchased this product can write a review.</p>
+      @endif
+    @else
+      <p class="small text-muted-slate">
+        <a href="{{ route('login') }}" class="text-accent">Sign in</a> to write a review.
+      </p>
+    @endauth
+  </section>
+
   @if ($related->isNotEmpty())
     <section class="mt-5" aria-labelledby="related-products">
       <h2 id="related-products" class="h4 mb-3">You May Also Like</h2>
@@ -287,6 +377,32 @@
     if (sizeSelect) sizeSelect.addEventListener('change', updateSelectedVariant);
 
     updateSelectedVariant();
+  })();
+
+  (function () {
+    document.querySelectorAll('[data-star-input]').forEach(function (group) {
+      var hidden = group.querySelector('input[type="hidden"]');
+      var buttons = Array.prototype.slice.call(group.querySelectorAll('.star-input-btn'));
+
+      function render(value) {
+        buttons.forEach(function (btn) {
+          btn.querySelector('i').className = 'bi ' + (parseInt(btn.dataset.star, 10) <= value ? 'bi-star-fill' : 'bi-star');
+        });
+      }
+
+      buttons.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          hidden.value = btn.dataset.star;
+          render(parseInt(btn.dataset.star, 10));
+        });
+        btn.addEventListener('mouseenter', function () {
+          render(parseInt(btn.dataset.star, 10));
+        });
+        btn.addEventListener('mouseleave', function () {
+          render(parseInt(hidden.value, 10) || 0);
+        });
+      });
+    });
   })();
 </script>
 
