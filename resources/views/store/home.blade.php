@@ -171,11 +171,9 @@
           <span class="visually-hidden">featured products</span>
         </a>
       </div>
-      <div class="row g-4">
+      <div class="featured-products-grid">
         @foreach ($featuredProducts as $product)
-          <div class="col-6 col-md-4 col-lg-3">
-            <x-product-card :product="$product" :eager="$loop->index < 4" />
-          </div>
+          <x-product-card :product="$product" :eager="$loop->index < 4" />
         @endforeach
       </div>
     </section>

@@ -22,7 +22,7 @@ class HomeController extends Controller
         $featuredProducts = Product::with('variants')
             ->where('is_active', true)
             ->latest()
-            ->limit(8)
+            ->limit(7)
             ->get();
 
         $homepageSections = HomepageSection::where('is_active', true)

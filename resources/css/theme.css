@@ -438,6 +438,25 @@ body {
   border-bottom: 1px solid var(--color-border);
 }
 
+/* ---------- Featured Products grid (homepage) — 7 cards per row on
+   desktop, narrowing down for smaller screens instead of Bootstrap's
+   12-column grid, which can't divide evenly into 7 ---------- */
+
+.featured-products-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+}
+@media (min-width: 576px) {
+  .featured-products-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (min-width: 768px) {
+  .featured-products-grid { grid-template-columns: repeat(4, 1fr); }
+}
+@media (min-width: 992px) {
+  .featured-products-grid { grid-template-columns: repeat(7, 1fr); gap: 1rem; }
+}
+
 /* ---------- Product Card (ui_design_notes.txt §0 — Wayfair pattern) ---------- */
 
 .product-card {

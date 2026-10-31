@@ -204,19 +204,23 @@
                 <div class="position-sticky" style="top:1rem">
                     <div class="table-admin p-4 mb-3">
                         <h6 class="mb-3"><i class="bi bi-images me-2 text-muted-slate"></i>Product Images</h6>
-                        <p class="small text-muted-slate">Select vendor images and/or upload your own. No limit on how many. Drag to reorder — the first image is the main photo shown on the shop.</p>
+                        <p class="small text-muted-slate">Select vendor images and/or upload your own. No limit on how many. Drag to reorder — the first image is the main photo shown on the shop. Click the &times; on an image to remove it from the list entirely.</p>
                         <div class="row g-2 mb-3" id="vendorImagesRow">
                             @forelse ($images as $image)
                                 <div class="col-6 js-image-tile" draggable="true">
                                     <label class="image-picker-item d-block is-selected" style="width:100%;height:90px;cursor:grab">
                                         <img src="{{ $image }}" style="width:100%;height:100%;object-fit:cover" draggable="false">
                                         <input type="checkbox" name="images[]" value="{{ $image }}" checked class="image-picker-item__check js-image-input">
+                                        <button type="button" class="btn btn-sm btn-danger position-absolute top-0 start-0 m-1 js-image-remove" style="padding:0;width:22px;height:22px;line-height:1" aria-label="Remove this image">&times;</button>
                                         <span class="image-picker-item__primary-tag js-main-badge" style="{{ $loop->first ? '' : 'display:none' }}">Primary</span>
                                     </label>
                                 </div>
                             @empty
-                                <div class="col-12 small text-muted-slate">No vendor images available.</div>
+                                <div class="col-12 small text-muted-slate" id="noVendorImages">No vendor images available.</div>
                             @endforelse
+                            @if ($images->isNotEmpty())
+                                <div class="col-12 small text-muted-slate" id="noVendorImages" style="display:none">No vendor images selected — upload your own below.</div>
+                            @endif
                         </div>
                         <label class="form-label small">Upload Custom Images</label>
                         <input type="file" name="custom_images[]" accept="image/jpeg,image/png,image/webp" multiple class="form-control form-control-sm js-image-input" id="customImages">
@@ -269,6 +273,7 @@
         (function () {
             var row = document.getElementById('vendorImagesRow');
             var counter = document.getElementById('imageCounter');
+            var noImagesNotice = document.getElementById('noVendorImages');
             var inputs = document.querySelectorAll('.js-image-input');
 
             function countSelected() {
@@ -303,11 +308,29 @@
                     item.classList.toggle('is-selected', !!(check && check.checked));
                 });
 
+                if (noImagesNotice) {
+                    noImagesNotice.style.display = row.querySelectorAll('.js-image-tile').length ? 'none' : '';
+                }
+
                 updateMainBadge();
             }
 
             inputs.forEach(function (input) {
                 input.addEventListener('change', refresh);
+            });
+
+            // A remove button sits inside the <label> so it can float over
+            // the same tile as the checkbox — without stopping the click
+            // here first, the browser's native label-click-toggles-checkbox
+            // behavior would also fire and re-tick the box we're deleting.
+            row.addEventListener('click', function (e) {
+                var removeBtn = e.target.closest('.js-image-remove');
+                if (!removeBtn) return;
+                e.preventDefault();
+                e.stopPropagation();
+                var tile = removeBtn.closest('.js-image-tile');
+                if (tile) tile.remove();
+                refresh();
             });
 
             var dragged = null;
