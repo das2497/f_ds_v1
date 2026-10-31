@@ -13,7 +13,7 @@
 
   <div class="nav-section-label">Content</div>
   <nav class="nav flex-column">
-    <a class="nav-link {{ request()->routeIs('admin.carousel.*') ? 'active' : '' }}" href="{{ route('admin.carousel.index') }}"><i class="bi bi-images"></i> Homepage Carousel</a>
+    <a class="nav-link {{ request()->routeIs('admin.carousel.*') ? 'active' : '' }}" href="{{ route('admin.carousel.index') }}"><i class="bi bi-images"></i> Homepage Settings</a>
   </nav>
 
   <div class="nav-section-label">Product &amp; Vendor Catalog</div>

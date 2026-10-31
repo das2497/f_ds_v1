@@ -11,6 +11,7 @@ export default defineConfig({
                 'resources/js/charts-utm.js',
                 'resources/js/charts-demand.js',
                 'resources/js/ai-research-chat.js',
+                'resources/js/admin-design-canvas.js',
             ],
             refresh: true,
         }),

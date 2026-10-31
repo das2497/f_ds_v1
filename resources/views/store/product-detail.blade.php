@@ -16,6 +16,7 @@
         'color' => $v->color,
         'size' => $v->size,
         'in_stock' => $v->stock_status !== 'out_of_stock',
+        'image' => $v->image,
     ])->values();
 
     $images = collect($product->images ?? [])->filter()->values();
@@ -67,18 +68,16 @@
         @endif
       </div>
 
-      @if ($images->count() > 1)
-        <div class="d-flex gap-2 flex-wrap" role="group" aria-label="Product image thumbnails">
-          @foreach ($images as $image)
-            <button type="button" class="pdp-gallery-thumb @if ($loop->first) active @endif"
-                    data-gallery-thumb data-image="{{ $image }}"
-                    aria-label="Show image {{ $loop->iteration }} of {{ $images->count() }}"
-                    aria-pressed="{{ $loop->first ? 'true' : 'false' }}">
-              <img src="{{ $image }}" alt="" loading="lazy" decoding="async">
-            </button>
-          @endforeach
-        </div>
-      @endif
+      <div class="d-flex gap-2 flex-wrap" role="group" aria-label="Product image thumbnails">
+        @foreach ($images as $image)
+          <button type="button" class="pdp-gallery-thumb @if ($loop->first) active @endif"
+                  data-gallery-thumb data-image="{{ $image }}"
+                  aria-label="Show image {{ $loop->iteration }} of {{ $images->count() }}"
+                  aria-pressed="{{ $loop->first ? 'true' : 'false' }}">
+            <img src="{{ $image }}" alt="" loading="lazy" decoding="async">
+          </button>
+        @endforeach
+      </div>
 
       @if ($product->video_path)
         <video src="{{ asset('storage/'.$product->video_path) }}" controls preload="metadata"
@@ -243,12 +242,23 @@
     var submitBtn = document.querySelector('#addToCartForm button[type="submit"]');
     var message = document.querySelector('[data-variant-message]');
     var sizeSelect = document.querySelector('select[data-swatch-group="size"]');
+    var mainImage = document.querySelector('[data-gallery-main]');
     if (!hiddenInput) return;
 
     // Tracked here rather than read back from the DOM, because the .active
     // class is applied by the shared swatch handler in main.js, which may
     // run after this listener for the same click.
     var selectedColor = @json($defaultColor);
+
+    // Picking a variant swaps the main photo to that variant's own chosen
+    // image (previously it never changed, so choosing "Black" could still
+    // show a white product photo) — the image an admin picked for that
+    // variant always wins as the main photo.
+    function updateGalleryForVariant(variant) {
+      if (variant && variant.image && mainImage && mainImage.tagName === 'IMG') {
+        mainImage.src = variant.image;
+      }
+    }
 
     function updateSelectedVariant() {
       var size = sizeSelect ? sizeSelect.value : null;
@@ -260,6 +270,7 @@
         hiddenInput.value = match.id;
         if (submitBtn) submitBtn.disabled = !match.in_stock;
         if (message) message.textContent = match.in_stock ? '' : 'This combination is sold out — try another option.';
+        updateGalleryForVariant(match);
       } else {
         if (submitBtn) submitBtn.disabled = true;
         if (message) message.textContent = 'That combination is not available.';

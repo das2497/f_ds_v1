@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\AppSetting;
 use App\Models\CarouselSlide;
+use App\Models\HomepageSection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -17,8 +18,9 @@ class CarouselSlideController extends Controller
         $slides = CarouselSlide::orderBy('sort_order')->get();
         $carouselWidth = AppSetting::getInt('carousel.width');
         $carouselHeight = AppSetting::getInt('carousel.height');
+        $sections = HomepageSection::with('items')->orderBy('sort_order')->get();
 
-        return view('admin.carousel.index', compact('slides', 'carouselWidth', 'carouselHeight'));
+        return view('admin.carousel.index', compact('slides', 'carouselWidth', 'carouselHeight', 'sections'));
     }
 
     public function updateSettings(Request $request): RedirectResponse

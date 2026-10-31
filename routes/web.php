@@ -9,9 +9,11 @@ use App\Http\Controllers\Admin\AuditLogController as AdminAuditLogController;
 use App\Http\Controllers\Admin\CarouselSlideController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\HomepageSectionController;
 use App\Http\Controllers\Admin\MaintenanceController as AdminMaintenanceController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
+use App\Http\Controllers\Admin\ProductDesignController;
 use App\Http\Controllers\Admin\RefundController as AdminRefundController;
 use App\Http\Controllers\Admin\SelectedProductController;
 use App\Http\Controllers\Admin\SettingsController as AdminSettingsController;
@@ -110,11 +112,24 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin|super-ad
     Route::delete('/carousel/{carousel}', [CarouselSlideController::class, 'destroy'])->name('carousel.destroy');
     Route::post('/carousel/{carousel}/move', [CarouselSlideController::class, 'move'])->name('carousel.move');
 
+    Route::post('/homepage-sections', [HomepageSectionController::class, 'store'])->name('homepage-sections.store');
+    Route::put('/homepage-sections/{homepageSection}', [HomepageSectionController::class, 'update'])->name('homepage-sections.update');
+    Route::delete('/homepage-sections/{homepageSection}', [HomepageSectionController::class, 'destroy'])->name('homepage-sections.destroy');
+    Route::post('/homepage-sections/{homepageSection}/move', [HomepageSectionController::class, 'move'])->name('homepage-sections.move');
+    Route::post('/homepage-sections/{homepageSection}/items', [HomepageSectionController::class, 'storeItem'])->name('homepage-sections.items.store');
+    Route::put('/homepage-section-items/{homepageSectionItem}', [HomepageSectionController::class, 'updateItem'])->name('homepage-section-items.update');
+    Route::delete('/homepage-section-items/{homepageSectionItem}', [HomepageSectionController::class, 'destroyItem'])->name('homepage-section-items.destroy');
+    Route::post('/homepage-section-items/{homepageSectionItem}/move', [HomepageSectionController::class, 'moveItem'])->name('homepage-section-items.move');
+
     Route::get('/products', [AdminProductController::class, 'index'])->name('products');
     Route::get('/products/create/{candidate}', [AdminProductController::class, 'create'])->name('products.create');
     Route::post('/products', [AdminProductController::class, 'store'])->name('products.store');
     Route::get('/products/{product}/edit', [AdminProductController::class, 'edit'])->name('products.edit');
     Route::put('/products/{product}', [AdminProductController::class, 'update'])->name('products.update');
+
+    Route::post('/product-designs/upload-image', [ProductDesignController::class, 'uploadImage'])->name('product-designs.upload-image');
+    Route::put('/product-candidates/{candidate}/design', [ProductDesignController::class, 'updateCandidate'])->name('candidates.design.update');
+    Route::put('/product-variants/{variant}/design', [ProductDesignController::class, 'updateVariant'])->name('product-variants.design.update');
 
     Route::get('/products-research-printful', [VendorResearchController::class, 'index'])
         ->defaults('vendor', 'printful')->name('products-research-printful');

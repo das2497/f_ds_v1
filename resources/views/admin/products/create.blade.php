@@ -122,7 +122,7 @@
                     </div>
                     <div class="table-responsive">
                         <table class="table table-admin align-middle mb-0">
-                            <thead><tr><th>List</th><th>Image</th><th>Variant</th><th>Color</th><th>Size</th><th>Vendor SKU</th><th>Internal SKU</th><th>Weight (lb)</th><th>Stock</th></tr></thead>
+                            <thead><tr><th>List</th><th>Image</th><th>Variant</th><th>Color</th><th>Size</th><th>Vendor SKU</th><th>Internal SKU</th><th>Weight (lb)</th><th>Stock</th>@if ($candidate->vendor === 'printful')<th>Design</th>@endif</tr></thead>
                             <tbody>
                                 @forelse ($variants as $i => $variant)
                                     <tr>
@@ -163,32 +163,55 @@
                                                 <span class="small text-muted-slate">—</span>
                                             @endif
                                         </td>
+                                        @if ($candidate->vendor === 'printful')
+                                            <td>
+                                                @if (! empty($variant['vendor_sku']))
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#designModal-candidate-{{ $i }}"><i class="bi bi-brush"></i> Design</button>
+                                                @else
+                                                    <span class="small text-muted-slate">—</span>
+                                                @endif
+                                            </td>
+                                        @endif
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="9" class="text-center text-muted-slate small py-4">No variants were imported for this product.</td>
+                                        <td colspan="{{ $candidate->vendor === 'printful' ? 10 : 9 }}" class="text-center text-muted-slate small py-4">No variants were imported for this product.</td>
                                     </tr>
                                 @endforelse
                             </tbody>
                         </table>
                     </div>
                 </div>
+
+                @if ($candidate->vendor === 'printful')
+                    @foreach ($variants as $i => $variant)
+                        @if (! empty($variant['vendor_sku']))
+                            @include('admin.products._design-canvas', [
+                                'modalId' => 'designModal-candidate-'.$i,
+                                'variantLabel' => $variant['option_label'] ?? 'Variant',
+                                'saveUrl' => route('admin.candidates.design.update', $candidate),
+                                'placements' => $designPlacements,
+                                'existingDesign' => $candidate->design_data[$variant['vendor_sku']] ?? [],
+                                'referenceImage' => $variant['image'] ?? $candidate->preview_image_url,
+                                'extraFields' => ['vendor_sku' => $variant['vendor_sku']],
+                            ])
+                        @endif
+                    @endforeach
+                @endif
             </div>
 
             <div class="col-lg-4">
                 <div class="position-sticky" style="top:1rem">
                     <div class="table-admin p-4 mb-3">
                         <h6 class="mb-3"><i class="bi bi-images me-2 text-muted-slate"></i>Product Images</h6>
-                        <p class="small text-muted-slate">Select vendor images and/or upload your own. Up to 5 images total.</p>
+                        <p class="small text-muted-slate">Select vendor images and/or upload your own. No limit on how many. Drag to reorder — the first image is the main photo shown on the shop.</p>
                         <div class="row g-2 mb-3" id="vendorImagesRow">
                             @forelse ($images as $image)
-                                <div class="col-6">
-                                    <label class="image-picker-item d-block {{ $loop->index < 5 ? 'is-selected' : '' }}" style="width:100%;height:90px">
-                                        <img src="{{ $image }}" style="width:100%;height:100%;object-fit:cover">
-                                        <input type="checkbox" name="images[]" value="{{ $image }}" {{ $loop->index < 5 ? 'checked' : '' }} class="image-picker-item__check js-image-input">
-                                        @if ($loop->first)
-                                            <span class="image-picker-item__primary-tag">Primary</span>
-                                        @endif
+                                <div class="col-6 js-image-tile" draggable="true">
+                                    <label class="image-picker-item d-block is-selected" style="width:100%;height:90px;cursor:grab">
+                                        <img src="{{ $image }}" style="width:100%;height:100%;object-fit:cover" draggable="false">
+                                        <input type="checkbox" name="images[]" value="{{ $image }}" checked class="image-picker-item__check js-image-input">
+                                        <span class="image-picker-item__primary-tag js-main-badge" style="{{ $loop->first ? '' : 'display:none' }}">Primary</span>
                                     </label>
                                 </div>
                             @empty
@@ -244,9 +267,8 @@
         })();
 
         (function () {
-            var MAX_IMAGES = 5;
+            var row = document.getElementById('vendorImagesRow');
             var counter = document.getElementById('imageCounter');
-            var submitBtn = document.querySelector('#productForm button[type="submit"]');
             var inputs = document.querySelectorAll('.js-image-input');
 
             function countSelected() {
@@ -255,22 +277,61 @@
                 return checked + uploaded;
             }
 
+            // The first CHECKED vendor image submits first, so it's what
+            // product-card.blade.php treats as the main image — the badge
+            // tracks whichever tile that actually is after a check/drag.
+            function updateMainBadge() {
+                var firstChecked = null;
+                row.querySelectorAll('.js-image-tile').forEach(function (tile) {
+                    var badge = tile.querySelector('.js-main-badge');
+                    var checked = tile.querySelector('.js-image-input').checked;
+                    if (checked && ! firstChecked) firstChecked = tile;
+                    if (badge) badge.style.display = 'none';
+                });
+                if (firstChecked) {
+                    var badge = firstChecked.querySelector('.js-main-badge');
+                    if (badge) badge.style.display = '';
+                }
+            }
+
             function refresh() {
                 var total = countSelected();
-                var overLimit = total > MAX_IMAGES;
-                counter.textContent = total + ' / ' + MAX_IMAGES + ' images selected' + (overLimit ? ' — please remove some.' : '');
-                counter.style.color = overLimit ? '#DC2626' : '';
-                submitBtn.disabled = overLimit;
+                counter.textContent = total + ' image' + (total === 1 ? '' : 's') + ' selected';
 
                 document.querySelectorAll('.image-picker-item').forEach(function (item) {
                     var check = item.querySelector('.image-picker-item__check');
                     item.classList.toggle('is-selected', !!(check && check.checked));
                 });
+
+                updateMainBadge();
             }
 
             inputs.forEach(function (input) {
                 input.addEventListener('change', refresh);
             });
+
+            var dragged = null;
+            row.addEventListener('dragstart', function (e) {
+                dragged = e.target.closest('.js-image-tile');
+                if (!dragged) return;
+                e.dataTransfer.effectAllowed = 'move';
+                dragged.classList.add('is-dragging');
+            });
+            row.addEventListener('dragover', function (e) {
+                if (!dragged) return;
+                e.preventDefault();
+                var target = e.target.closest('.js-image-tile');
+                if (!target || target === dragged) return;
+                var rect = target.getBoundingClientRect();
+                var insertAfter = (e.clientX - rect.left) / rect.width > 0.5;
+                row.insertBefore(dragged, insertAfter ? target.nextSibling : target);
+            });
+            row.addEventListener('dragend', function () {
+                if (dragged) dragged.classList.remove('is-dragging');
+                dragged = null;
+                refresh();
+            });
+
             refresh();
         })();
 

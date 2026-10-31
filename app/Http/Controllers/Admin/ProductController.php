@@ -9,6 +9,7 @@ use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\VendorProductCandidate;
 use App\Services\Html\DescriptionSanitizer;
+use App\Services\Vendor\PrintfulService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -20,9 +21,9 @@ use Illuminate\View\View;
 
 class ProductController extends Controller
 {
-    private const MAX_IMAGES = 5;
-
     private const MAX_VIDEO_KB = 20480;
+
+    public function __construct(private readonly PrintfulService $printful) {}
 
     public function index(Request $request): View
     {
@@ -53,6 +54,9 @@ class ProductController extends Controller
             'suggestedCategoryId' => $categoryMatch['category_id'],
             'suggestedSubcategoryId' => $categoryMatch['subcategory_id'],
             'suggestedDescription' => $suggestedDescription,
+            'designPlacements' => $candidate->vendor === 'printful'
+                ? $this->printful->getPrintfileTemplate($candidate->vendor_external_id)
+                : [],
         ]);
     }
 
@@ -140,11 +144,7 @@ class ProductController extends Controller
             'price' => ['required', 'numeric', 'min:0'],
             'compare_at_price' => ['nullable', 'numeric', 'min:0'],
             'is_active' => ['nullable', 'boolean'],
-            'images' => ['nullable', 'array', function ($attribute, $value, $fail) use ($request) {
-                if (count($value) + count($request->file('custom_images', [])) > self::MAX_IMAGES) {
-                    $fail('You can select at most '.self::MAX_IMAGES.' product images in total.');
-                }
-            }],
+            'images' => ['nullable', 'array'],
             'images.*' => ['string'],
             'custom_images' => ['nullable', 'array'],
             'custom_images.*' => ['file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
@@ -193,6 +193,14 @@ class ProductController extends Controller
             ]);
 
             foreach ($listedVariants as $i => $variant) {
+                // Draft designs are saved pre-publish keyed by the vendor's
+                // own variant SKU (no real ProductVariant row exists yet at
+                // that point) — hand each one off to its matching variant
+                // now that it's actually being created.
+                $draftDesign = $variant['vendor_sku'] ?? null
+                    ? ($candidate->design_data[$variant['vendor_sku']] ?? null)
+                    : null;
+
                 $product->variants()->create([
                     'sku' => $variant['sku'],
                     'vendor_sku' => $variant['vendor_sku'] ?? null,
@@ -202,6 +210,7 @@ class ProductController extends Controller
                     'size' => $variant['size'] ?? null,
                     'cost_price' => $variant['cost_price'],
                     'weight_lb' => $variant['weight_lb'] ?? null,
+                    'design_data' => $draftDesign,
                     'stock_status' => 'in_stock',
                     'is_active' => true,
                 ]);
@@ -225,7 +234,27 @@ class ProductController extends Controller
             ->reject(fn ($variant) => in_array($variant['vendor_sku'] ?? null, $usedVendorSkus, true))
             ->values();
 
-        return view('admin.products.edit', compact('product', 'categories', 'availableVendorVariants'));
+        $designPlacements = $product->source_vendor === 'printful' && $product->vendorProductCandidate
+            ? $this->printful->getPrintfileTemplate($product->vendorProductCandidate->vendor_external_id)
+            : [];
+
+        // Every photo already associated with this product — the vendor's
+        // own per-variant images and overall preview, plus whatever is
+        // currently in the product's own gallery (which can include
+        // custom photos the admin already uploaded there) — so a variant
+        // row can be pointed at any of them, not just whichever one was
+        // auto-assigned at publish time or a freshly uploaded new file.
+        $pickableImages = collect($product->vendorProductCandidate?->raw_payload['variants'] ?? [])
+            ->pluck('image')
+            ->filter()
+            ->unique()
+            ->values();
+        if ($product->vendorProductCandidate?->preview_image_url) {
+            $pickableImages = collect([$product->vendorProductCandidate->preview_image_url])->merge($pickableImages)->unique()->values();
+        }
+        $pickableImages = collect($product->images ?? [])->merge($pickableImages)->unique()->values();
+
+        return view('admin.products.edit', compact('product', 'categories', 'availableVendorVariants', 'designPlacements', 'pickableImages'));
     }
 
     public function update(Request $request, Product $product): RedirectResponse
@@ -238,11 +267,7 @@ class ProductController extends Controller
             'price' => ['required', 'numeric', 'min:0'],
             'compare_at_price' => ['nullable', 'numeric', 'min:0'],
             'is_active' => ['nullable', 'boolean'],
-            'keep_images' => ['nullable', 'array', function ($attribute, $value, $fail) use ($request) {
-                if (count($value) + count($request->file('custom_images', [])) > self::MAX_IMAGES) {
-                    $fail('You can keep at most '.self::MAX_IMAGES.' product images in total.');
-                }
-            }],
+            'keep_images' => ['nullable', 'array'],
             'keep_images.*' => ['string'],
             'custom_images' => ['nullable', 'array'],
             'custom_images.*' => ['file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
@@ -256,6 +281,7 @@ class ProductController extends Controller
             'existing_variants.*.weight_lb' => ['nullable', 'numeric', 'min:0'],
             'existing_variants.*.is_active' => ['nullable', 'boolean'],
             'existing_variants.*.image' => ['nullable', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'existing_variants.*.vendor_image' => ['nullable', 'string'],
             'new_variants' => ['nullable', 'array'],
             'new_variants.*.add' => ['nullable', 'boolean'],
             'new_variants.*.vendor_sku' => ['nullable', 'string'],
@@ -312,7 +338,11 @@ class ProductController extends Controller
                     'size' => $data['size'] ?? null,
                     'sku' => $data['sku'],
                     'weight_lb' => $data['weight_lb'] ?? null,
-                    'image' => $this->resolveVariantImage($request, "existing_variants.{$variantId}.image", $variant->image),
+                    // A freshly picked vendor image (from the "Choose Vendor
+                    // Image" picker) wins over the variant's current image,
+                    // but an uploaded file always wins over either — see
+                    // resolveVariantImage().
+                    'image' => $this->resolveVariantImage($request, "existing_variants.{$variantId}.image", $data['vendor_image'] ?? $variant->image),
                     'is_active' => ! empty($data['is_active']),
                 ]);
             }
@@ -406,7 +436,7 @@ class ProductController extends Controller
             $imageUrls[] = Storage::disk('public')->url($file->store('products', 'public'));
         }
 
-        return array_slice($imageUrls, 0, self::MAX_IMAGES);
+        return $imageUrls;
     }
 
     private function uniqueSlug(string $title): string

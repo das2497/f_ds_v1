@@ -78,7 +78,7 @@ class ProductImageVideoUploadTest extends TestCase
         Storage::disk('public')->assertExists($product->video_path);
     }
 
-    public function test_store_rejects_more_than_five_images(): void
+    public function test_store_allows_more_than_five_images(): void
     {
         Storage::fake('public');
 
@@ -90,6 +90,7 @@ class ProductImageVideoUploadTest extends TestCase
             'title' => 'Black Glossy Mug',
             'category_id' => $category->id,
             'price' => 20.28,
+            'is_active' => '1',
             'images' => [
                 'https://files.cdn.printful.com/one.jpg',
                 'https://files.cdn.printful.com/two.jpg',
@@ -105,8 +106,11 @@ class ProductImageVideoUploadTest extends TestCase
             ],
         ]);
 
-        $response->assertSessionHasErrors('images');
-        $this->assertDatabaseMissing('products', ['title' => 'Black Glossy Mug']);
+        $response->assertRedirect(route('admin.products'));
+
+        $product = Product::where('title', 'Black Glossy Mug')->firstOrFail();
+
+        $this->assertCount(6, $product->images);
     }
 
     public function test_update_can_replace_video_and_change_kept_images(): void
@@ -144,5 +148,42 @@ class ProductImageVideoUploadTest extends TestCase
         $this->assertSame('https://files.cdn.printful.com/one.jpg', $product->images[0]);
         $this->assertNull($product->video_path);
         Storage::disk('public')->assertMissing($oldVideoPath);
+    }
+
+    public function test_update_allows_keeping_more_than_five_images(): void
+    {
+        Storage::fake('public');
+
+        $category = Category::create(['name' => 'Home & Living', 'slug' => 'home-living']);
+
+        $product = Product::create([
+            'category_id' => $category->id,
+            'title' => 'Black Glossy Mug',
+            'slug' => 'black-glossy-mug',
+            'price' => 20.28,
+            'images' => [],
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($this->admin())->put(route('admin.products.update', $product), [
+            'title' => 'Black Glossy Mug',
+            'category_id' => $category->id,
+            'price' => 21.00,
+            'is_active' => '1',
+            'keep_images' => [
+                'https://files.cdn.printful.com/one.jpg',
+                'https://files.cdn.printful.com/two.jpg',
+                'https://files.cdn.printful.com/three.jpg',
+                'https://files.cdn.printful.com/four.jpg',
+                'https://files.cdn.printful.com/five.jpg',
+                'https://files.cdn.printful.com/six.jpg',
+            ],
+        ]);
+
+        $response->assertRedirect();
+
+        $product->refresh();
+
+        $this->assertCount(6, $product->images);
     }
 }

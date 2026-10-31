@@ -21,6 +21,7 @@
         "bootstrap": "^5.3.8",
         "bootstrap-icons": "^1.13.2",
         "chart.js": "^4.6.1",
-        "chartjs-plugin-datalabels": "^2.2.0"
+        "chartjs-plugin-datalabels": "^2.2.0",
+        "fabric": "^7.4.0"
     }
 }

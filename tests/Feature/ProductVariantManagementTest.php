@@ -154,6 +154,111 @@ class ProductVariantManagementTest extends TestCase
         $this->assertStringContainsString('/storage/products/variants/', $variant->image);
     }
 
+    public function test_update_can_point_an_existing_variant_at_a_different_picked_vendor_image(): void
+    {
+        $category = $this->category();
+        $product = Product::create([
+            'category_id' => $category->id,
+            'title' => 'Rubber Case for AirPods',
+            'slug' => 'rubber-case-for-airpods',
+            'price' => 25.88,
+            'images' => [],
+            'is_active' => true,
+        ]);
+        $variant = $product->variants()->create([
+            'sku' => 'SHB-CASE-1',
+            'vendor_sku' => '15524',
+            'option_label' => 'Black / AirPods Pro',
+            'image' => 'https://files.cdn.printful.com/black.jpg',
+            'color' => 'Black',
+            'size' => 'AirPods Pro',
+            'cost_price' => 10.35,
+            'stock_status' => 'in_stock',
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($this->admin())->put(route('admin.products.update', $product), [
+            'title' => 'Rubber Case for AirPods',
+            'category_id' => $category->id,
+            'price' => 25.88,
+            'existing_variants' => [
+                $variant->id => [
+                    'option_label' => 'Black / AirPods Pro',
+                    'color' => 'Black',
+                    'size' => 'AirPods Pro',
+                    'sku' => 'SHB-CASE-1',
+                    'is_active' => '1',
+                    'vendor_image' => 'https://files.cdn.printful.com/blue.jpg',
+                ],
+            ],
+        ]);
+
+        $response->assertRedirect();
+
+        $this->assertSame('https://files.cdn.printful.com/blue.jpg', $variant->fresh()->image);
+    }
+
+    public function test_the_edit_page_renders_a_vendor_image_picker_for_the_products_candidate_photos(): void
+    {
+        $category = $this->category();
+        $candidate = $this->candidate();
+
+        $product = Product::create([
+            'category_id' => $category->id,
+            'vendor_product_candidate_id' => $candidate->id,
+            'title' => 'Rubber Case for AirPods',
+            'slug' => 'rubber-case-for-airpods',
+            'price' => 25.88,
+            'images' => [],
+            'is_active' => true,
+        ]);
+        $product->variants()->create([
+            'sku' => 'SHB-CASE-1',
+            'vendor_sku' => '15524',
+            'option_label' => 'Black / AirPods Pro',
+            'color' => 'Black',
+            'size' => 'AirPods Pro',
+            'cost_price' => 10.35,
+            'stock_status' => 'in_stock',
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($this->admin())->get(route('admin.products.edit', $product));
+
+        $response->assertOk();
+        $response->assertSee('chooseVendorImageModal', false);
+        $response->assertSee('js-choose-vendor-image', false);
+        $response->assertSee('https://files.cdn.printful.com/black.jpg', false);
+        $response->assertSee('https://files.cdn.printful.com/blue.jpg', false);
+    }
+
+    public function test_the_image_picker_also_includes_photos_already_uploaded_to_the_products_own_gallery(): void
+    {
+        $category = $this->category();
+        $product = Product::create([
+            'category_id' => $category->id,
+            'title' => 'Rubber Case for AirPods',
+            'slug' => 'rubber-case-for-airpods',
+            'price' => 25.88,
+            // Not vendor photos — e.g. a custom shot the admin uploaded
+            // earlier via "Upload More Images" and kept in the gallery.
+            'images' => ['https://cdn.example.com/custom-upload.jpg'],
+            'is_active' => true,
+        ]);
+        $product->variants()->create([
+            'sku' => 'SHB-CASE-1',
+            'option_label' => 'Black / AirPods Pro',
+            'cost_price' => 10.35,
+            'stock_status' => 'in_stock',
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($this->admin())->get(route('admin.products.edit', $product));
+
+        $response->assertOk();
+        $response->assertSee('https://cdn.example.com/custom-upload.jpg', false);
+    }
+
     public function test_update_can_add_a_previously_unselected_vendor_variant(): void
     {
         Storage::fake('public');

@@ -75,13 +75,17 @@
                     <p class="small text-muted-slate">Edit details, replace images, or untick "Active" to stop selling a variant without deleting it.</p>
                     <div class="table-responsive">
                         <table class="table table-admin align-middle mb-0">
-                            <thead><tr><th>Active</th><th>Image</th><th>Variant</th><th>Color</th><th>Size</th><th>Internal SKU</th><th>Weight (lb)</th><th>Cost</th></tr></thead>
+                            <thead><tr><th>Active</th><th>Image</th><th>Variant</th><th>Color</th><th>Size</th><th>Internal SKU</th><th>Weight (lb)</th><th>Cost</th>@if ($product->source_vendor === 'printful')<th>Design</th>@endif</tr></thead>
                             <tbody>
                                 @foreach ($product->variants as $variant)
                                     <tr>
                                         <td><input type="checkbox" name="existing_variants[{{ $variant->id }}][is_active]" value="1" @checked($variant->is_active)></td>
                                         <td>
                                             <img src="{{ $variant->image ?? 'https://placehold.co/48x48/F8FAFC/64748B?text=No+Image' }}" class="js-variant-thumb" style="width:44px;height:44px;object-fit:cover;border-radius:6px">
+                                            <input type="hidden" name="existing_variants[{{ $variant->id }}][vendor_image]" class="js-variant-vendor-image-input">
+                                            @if ($pickableImages->isNotEmpty())
+                                                <button type="button" class="btn btn-sm btn-outline-secondary mt-1 js-choose-vendor-image" data-bs-toggle="modal" data-bs-target="#chooseVendorImageModal" style="font-size:0.7rem;padding:2px 6px">Choose</button>
+                                            @endif
                                             <input type="file" name="existing_variants[{{ $variant->id }}][image]" accept="image/jpeg,image/png,image/webp" class="form-control form-control-sm mt-1 js-variant-image-input" style="font-size:0.7rem">
                                         </td>
                                         <td>
@@ -92,12 +96,56 @@
                                         <td><input type="text" name="existing_variants[{{ $variant->id }}][sku]" class="form-control form-control-sm" value="{{ $variant->sku }}" style="width:160px" required></td>
                                         <td><input type="number" step="0.01" min="0" name="existing_variants[{{ $variant->id }}][weight_lb]" class="form-control form-control-sm" value="{{ $variant->weight_lb }}" style="width:80px"></td>
                                         <td class="small text-muted-slate">${{ number_format($variant->cost_price, 2) }}</td>
+                                        @if ($product->source_vendor === 'printful')
+                                            <td>
+                                                <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#designModal-variant-{{ $variant->id }}"><i class="bi bi-brush"></i> Design</button>
+                                            </td>
+                                        @endif
                                     </tr>
                                 @endforeach
                             </tbody>
                         </table>
                     </div>
                 </div>
+
+                @if ($pickableImages->isNotEmpty())
+                    <div class="modal fade" id="chooseVendorImageModal" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Choose Image</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <p class="small text-muted-slate">Includes vendor photos and any custom images already uploaded to this product.</p>
+                                    <div class="row g-2">
+                                        @foreach ($pickableImages as $image)
+                                            <div class="col-4">
+                                                <button type="button" class="js-vendor-image-option p-0 border-0 w-100" data-image="{{ $image }}" style="background:#F8FAFC">
+                                                    <img src="{{ $image }}" style="width:100%;height:140px;object-fit:contain;border-radius:6px;border:1px solid var(--color-border)">
+                                                </button>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
+                @if ($product->source_vendor === 'printful')
+                    @foreach ($product->variants as $variant)
+                        @include('admin.products._design-canvas', [
+                            'modalId' => 'designModal-variant-'.$variant->id,
+                            'variantLabel' => $variant->option_label,
+                            'saveUrl' => route('admin.product-variants.design.update', $variant),
+                            'placements' => $designPlacements,
+                            'existingDesign' => $variant->design_data ?? [],
+                            'referenceImage' => $variant->image ?? ($product->images[0] ?? null),
+                            'extraFields' => [],
+                        ])
+                    @endforeach
+                @endif
 
                 @if ($availableVendorVariants->isNotEmpty())
                     <div class="table-admin p-4">
@@ -137,13 +185,15 @@
             <div class="col-lg-4">
                 <div class="table-admin p-4 mb-3">
                     <h6 class="mb-3">Product Images</h6>
-                    <p class="small text-muted-slate">Uncheck to remove, or upload more. Up to 5 images total.</p>
+                    <p class="small text-muted-slate">Upload as many as you need. Drag to reorder — the first image is the main photo shown on the shop. Click the &times; on an image to remove it.</p>
                     <div class="row g-2 mb-3" id="vendorImagesRow">
                         @forelse ($product->images ?? [] as $image)
-                            <div class="col-6">
-                                <div class="cart-item__image position-relative" style="width:100%;height:90px">
-                                    <img src="{{ $image }}">
-                                    <input type="checkbox" name="keep_images[]" value="{{ $image }}" checked class="position-absolute top-0 start-0 m-1 js-image-input">
+                            <div class="col-6 js-image-tile" draggable="true">
+                                <div class="cart-item__image position-relative" style="width:100%;height:90px;cursor:grab">
+                                    <img src="{{ $image }}" draggable="false">
+                                    <input type="checkbox" name="keep_images[]" value="{{ $image }}" checked class="d-none js-image-input">
+                                    <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-1 js-remove-image" style="padding:0;width:22px;height:22px;line-height:1" aria-label="Remove this image">&times;</button>
+                                    <span class="image-picker-item__primary-tag js-main-badge" style="{{ $loop->first ? '' : 'display:none' }}">Main photo</span>
                                 </div>
                             </div>
                         @empty
@@ -197,9 +247,8 @@
         })();
 
         (function () {
-            var MAX_IMAGES = 5;
+            var row = document.getElementById('vendorImagesRow');
             var counter = document.getElementById('imageCounter');
-            var submitBtn = document.querySelector('#productForm button[type="submit"]');
             var inputs = document.querySelectorAll('.js-image-input');
 
             function countSelected() {
@@ -208,17 +257,65 @@
                 return checked + uploaded;
             }
 
+            // The first kept tile submits first, so it's what
+            // product-card.blade.php and the storefront gallery treat as
+            // the main image — the badge tracks whichever tile that is.
+            function updateMainBadge() {
+                var firstChecked = null;
+                row.querySelectorAll('.js-image-tile').forEach(function (tile) {
+                    var badge = tile.querySelector('.js-main-badge');
+                    var checked = tile.querySelector('.js-image-input').checked;
+                    if (checked && ! firstChecked) firstChecked = tile;
+                    if (badge) badge.style.display = 'none';
+                });
+                if (firstChecked) {
+                    var badge = firstChecked.querySelector('.js-main-badge');
+                    if (badge) badge.style.display = '';
+                }
+            }
+
             function refresh() {
                 var total = countSelected();
-                var overLimit = total > MAX_IMAGES;
-                counter.textContent = total + ' / ' + MAX_IMAGES + ' images selected' + (overLimit ? ' — please remove some.' : '');
-                counter.style.color = overLimit ? '#DC2626' : '';
-                submitBtn.disabled = overLimit;
+                counter.textContent = total + ' image' + (total === 1 ? '' : 's') + ' selected';
+                updateMainBadge();
             }
 
             inputs.forEach(function (input) {
                 input.addEventListener('change', refresh);
             });
+
+            document.querySelectorAll('.js-remove-image').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    var tile = btn.closest('.js-image-tile');
+                    var checkbox = tile.querySelector('.js-image-input');
+                    if (checkbox) checkbox.checked = false;
+                    tile.remove();
+                    refresh();
+                });
+            });
+
+            var dragged = null;
+            row.addEventListener('dragstart', function (e) {
+                dragged = e.target.closest('.js-image-tile');
+                if (!dragged) return;
+                e.dataTransfer.effectAllowed = 'move';
+                dragged.classList.add('is-dragging');
+            });
+            row.addEventListener('dragover', function (e) {
+                if (!dragged) return;
+                e.preventDefault();
+                var target = e.target.closest('.js-image-tile');
+                if (!target || target === dragged) return;
+                var rect = target.getBoundingClientRect();
+                var insertAfter = (e.clientX - rect.left) / rect.width > 0.5;
+                row.insertBefore(dragged, insertAfter ? target.nextSibling : target);
+            });
+            row.addEventListener('dragend', function () {
+                if (dragged) dragged.classList.remove('is-dragging');
+                dragged = null;
+                updateMainBadge();
+            });
+
             refresh();
         })();
 
@@ -229,6 +326,41 @@
                     if (input.files && input.files[0] && thumb) {
                         thumb.src = URL.createObjectURL(input.files[0]);
                     }
+                });
+            });
+        })();
+
+        (function () {
+            // Each row's "Choose" button remembers which row opened the
+            // shared modal; a picked thumbnail writes straight back into
+            // that row's own hidden field and preview image.
+            var activeCell = null;
+
+            document.querySelectorAll('.js-choose-vendor-image').forEach(function (button) {
+                button.addEventListener('click', function () {
+                    activeCell = button.closest('td');
+                });
+            });
+
+            document.querySelectorAll('.js-vendor-image-option').forEach(function (option) {
+                option.addEventListener('click', function () {
+                    if (!activeCell) return;
+
+                    var url = option.dataset.image;
+                    var thumb = activeCell.querySelector('.js-variant-thumb');
+                    var hiddenInput = activeCell.querySelector('.js-variant-vendor-image-input');
+                    var fileInput = activeCell.querySelector('.js-variant-image-input');
+
+                    if (thumb) thumb.src = url;
+                    if (hiddenInput) hiddenInput.value = url;
+                    // A freshly uploaded file still wins on submit (see
+                    // resolveVariantImage()) — clear it so picking a vendor
+                    // image after choosing a file actually takes effect.
+                    if (fileInput) fileInput.value = '';
+
+                    var modalEl = document.getElementById('chooseVendorImageModal');
+                    var modal = window.bootstrap && modalEl ? window.bootstrap.Modal.getInstance(modalEl) : null;
+                    if (modal) modal.hide();
                 });
             });
         })();

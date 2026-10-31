@@ -77,6 +77,41 @@
   </section>
 @endif
 
+@if ($homepageSections->isNotEmpty())
+<section class="py-4" aria-label="Shop by collection">
+  <div class="container">
+    <div class="row g-3">
+      @foreach ($homepageSections as $section)
+        <div class="col-6 col-lg-3">
+          <div class="homepage-section-card card-surface p-3 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h2 class="h6 fw-bold mb-0">{{ $section->title }}</h2>
+              <a href="{{ $section->link_url ?: route('products.index') }}" class="text-muted-slate text-decoration-none" aria-label="View all {{ $section->title }}">
+                <i class="bi bi-chevron-right" aria-hidden="true"></i>
+              </a>
+            </div>
+            <div class="homepage-section-items">
+              @foreach ($section->items as $item)
+                <a href="{{ $item->link_url ?: route('products.index') }}" class="homepage-section-item">
+                  <span class="homepage-section-item-media">
+                    @if ($item->image_path)
+                      <img src="{{ asset('storage/'.$item->image_path) }}" alt="" loading="lazy" decoding="async">
+                    @else
+                      <span class="ph-icon-wrap ph-icon-sm" aria-hidden="true"><i class="bi bi-bag-heart"></i></span>
+                    @endif
+                  </span>
+                  <span class="homepage-section-item-label">{{ $item->label }}</span>
+                </a>
+              @endforeach
+            </div>
+          </div>
+        </div>
+      @endforeach
+    </div>
+  </div>
+</section>
+@endif
+
 <div class="hero-trust-row py-3">
   <div class="container">
     <h2 class="visually-hidden">Why shop with {{ $storeName }}</h2>

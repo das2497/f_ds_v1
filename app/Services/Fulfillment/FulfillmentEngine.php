@@ -189,17 +189,32 @@ class FulfillmentEngine
     }
 
     /**
-     * @return array<int, array{vendor_sku: string, quantity: int}>
+     * @return array<int, array{vendor_sku: string, quantity: int, files?: array<int, array{type: string, url: string}>}>
      */
     private function vendorItemsPayload(VendorOrder $vendorOrder): array
     {
         return $vendorOrder->items()
-            ->with('orderItem')
+            ->with('orderItem.variant')
             ->get()
-            ->map(fn ($item) => [
-                'vendor_sku' => $item->orderItem->sku,
-                'quantity' => $item->quantity,
-            ])
+            ->map(function ($item) use ($vendorOrder) {
+                $payload = [
+                    // The vendor's own variant identifier (CJ's `vid`,
+                    // Printful's catalog `variant_id`) — not our internal
+                    // SKU, which the vendor has never heard of. Falls back
+                    // to the internal SKU only if a variant was somehow
+                    // never linked, matching this method's prior behavior.
+                    'vendor_sku' => $item->orderItem->variant?->vendor_sku ?? $item->orderItem->sku,
+                    'quantity' => $item->quantity,
+                ];
+
+                $designData = $item->orderItem->variant?->design_data;
+
+                if ($vendorOrder->vendor === 'printful' && $designData) {
+                    $payload['files'] = $this->printful->buildOrderFiles($designData);
+                }
+
+                return $payload;
+            })
             ->all();
     }
 

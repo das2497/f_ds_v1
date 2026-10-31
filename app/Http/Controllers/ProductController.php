@@ -8,6 +8,7 @@ use App\Models\Product;
 use App\Models\Subcategory;
 use App\Services\Analytics\AttributionService;
 use App\Services\Analytics\EventTracker;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -75,9 +76,11 @@ class ProductController extends Controller
         ));
     }
 
-    public function show(Request $request, Product $product): View
+    public function show(Request $request, Product $product): View|RedirectResponse
     {
-        abort_unless($product->is_active, 404);
+        if (! $product->is_active) {
+            return redirect()->route('home');
+        }
 
         $product->load(['variants' => fn ($q) => $q->where('is_active', true), 'category']);
 
