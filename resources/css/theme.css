@@ -433,11 +433,6 @@ body {
   font-weight: 600;
 }
 
-.hero-trust-row {
-  background: var(--color-surface);
-  border-bottom: 1px solid var(--color-border);
-}
-
 /* ---------- Featured Products grid (homepage) — 7 cards per row on
    desktop, narrowing down for smaller screens instead of Bootstrap's
    12-column grid, which can't divide evenly into 7 ---------- */

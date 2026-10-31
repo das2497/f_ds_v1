@@ -112,55 +112,7 @@
 </section>
 @endif
 
-<div class="hero-trust-row py-3">
-  <div class="container">
-    <h2 class="visually-hidden">Why shop with {{ $storeName }}</h2>
-    <div class="row g-3">
-      <div class="col-6 col-md-3 text-center">
-        <i class="bi bi-truck fs-5 text-accent" aria-hidden="true"></i>
-        <div class="small text-muted-slate mt-1">Fast &amp; Reliable Shipping</div>
-      </div>
-      <div class="col-6 col-md-3 text-center">
-        <i class="bi bi-shield-check fs-5 text-accent" aria-hidden="true"></i>
-        <div class="small text-muted-slate mt-1">Secure Payments</div>
-      </div>
-      <div class="col-6 col-md-3 text-center">
-        <i class="bi bi-star fs-5 text-accent" aria-hidden="true"></i>
-        <div class="small text-muted-slate mt-1">Top Rated Brands</div>
-      </div>
-      <div class="col-6 col-md-3 text-center">
-        <i class="bi bi-headset fs-5 text-accent" aria-hidden="true"></i>
-        <div class="small text-muted-slate mt-1">Dedicated Support</div>
-      </div>
-    </div>
-  </div>
-</div>
-
 <main class="container py-5">
-
-  <section class="mb-5" aria-labelledby="shop-by-category">
-    <h2 id="shop-by-category" class="h4 mb-3">Shop by Category</h2>
-    <div class="row g-3">
-      @foreach ($navCategories as $category)
-        <div class="col-4 col-md-3 col-lg-auto flex-lg-fill">
-          <a href="{{ route('products.index', ['cat' => $category->slug]) }}" class="text-decoration-none text-dark">
-            <div class="card-surface text-center py-4">
-              <i class="bi {{ $category->icon }} fs-3 text-accent mb-2" aria-hidden="true"></i>
-              <div class="small fw-semibold">{{ $category->name }}</div>
-            </div>
-          </a>
-        </div>
-      @endforeach
-      <div class="col-4 col-md-3 col-lg-auto flex-lg-fill">
-        <a href="{{ route('products.index') }}" class="text-decoration-none text-dark">
-          <div class="card-surface text-center py-4">
-            <i class="bi bi-grid-3x3-gap fs-3 text-accent mb-2" aria-hidden="true"></i>
-            <div class="small fw-semibold">More</div>
-          </div>
-        </a>
-      </div>
-    </div>
-  </section>
 
   @if ($featuredProducts->isNotEmpty())
     <section class="mb-5" aria-labelledby="featured-products">
@@ -178,29 +130,6 @@
       </div>
     </section>
   @endif
-
-  <section class="mb-5" aria-label="Shop highlights">
-    <div class="row g-4">
-      <div class="col-md-6">
-        <div class="rounded-4 p-5 text-white" style="background:var(--color-primary)">
-          <h2 class="h4 fw-bold">Upgrade Your Everyday Essentials</h2>
-          <p style="color:#cbd5e1">Modern products for a better you.</p>
-          <a href="{{ route('products.index') }}" class="btn btn-outline-accent">
-            Shop Now <i class="bi bi-arrow-right" aria-hidden="true"></i>
-          </a>
-        </div>
-      </div>
-      <div class="col-md-6">
-        <div class="rounded-4 p-5" style="background:#DBEAFE">
-          <h2 class="h4 fw-bold" style="color:var(--color-primary)">Save More with Our Deals</h2>
-          <p class="text-muted-slate">Great products. Better prices.</p>
-          <a href="{{ route('products.index', ['deals' => 1]) }}" class="btn btn-accent">
-            Explore Deals <i class="bi bi-arrow-right" aria-hidden="true"></i>
-          </a>
-        </div>
-      </div>
-    </div>
-  </section>
 
   <section class="mb-2">
     <h2 class="visually-hidden">Our promise</h2>
