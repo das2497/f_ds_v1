@@ -138,6 +138,23 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
+  // Product card color swatches — previews that variant's own photo on the
+  // card itself, so shoppers can browse colors without leaving the grid.
+  // Scoped to the swatch's own card so this works with many cards on one page.
+  document.querySelectorAll(".js-card-swatch").forEach(function (swatch) {
+    swatch.addEventListener("click", function () {
+      var card = swatch.closest(".product-card");
+      if (!card) return;
+      var mainImage = card.querySelector('[data-role="primary"]');
+      var source = swatch.dataset.image;
+      if (mainImage && source) mainImage.src = source;
+      card.querySelectorAll(".js-card-swatch").forEach(function (s) {
+        s.setAttribute("aria-pressed", "false");
+      });
+      swatch.setAttribute("aria-pressed", "true");
+    });
+  });
+
   // Remove cart item row (visual only — no total recalculation in this prototype)
   document.querySelectorAll("[data-action='remove-cart-item']").forEach(function (btn) {
     btn.addEventListener("click", function (e) {

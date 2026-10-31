@@ -9,6 +9,12 @@
     $isWishlisted = ($wishlistedIds ?? collect())->contains($product->id);
     $isDiscounted = $product->compare_at_price && $product->compare_at_price > $product->price;
     $percentOff = $isDiscounted ? round((1 - $product->price / $product->compare_at_price) * 100) : null;
+    $isNew = $product->created_at && $product->created_at->greaterThanOrEqualTo(now()->subDays(14));
+    // Only variants with their own photo can actually swap the card's main
+    // image when previewed, so colors without one are left out rather than
+    // shown as a swatch that does nothing when clicked.
+    $colorSwatches = $activeVariants->filter(fn ($v) => $v->color && $v->image)->unique('color')->values();
+    $secondImage = $product->images[1] ?? null;
 @endphp
 
 <div class="product-card{{ $isOutOfStock ? ' product-card--oos' : '' }}">
@@ -16,8 +22,13 @@
         <div class="product-card__badge-stack">
             @if ($isOutOfStock)
                 <span class="badge-oos">Sold Out</span>
-            @elseif ($isDiscounted)
-                <span class="badge-sale">{{ $percentOff }}% OFF</span>
+            @else
+                @if ($isNew)
+                    <span class="badge-new">New</span>
+                @endif
+                @if ($isDiscounted)
+                    <span class="badge-sale">{{ $percentOff }}% OFF</span>
+                @endif
             @endif
         </div>
         @auth
@@ -39,8 +50,13 @@
         @endauth
         <a href="{{ route('products.show', $product) }}" tabindex="-1" aria-hidden="true">
             @if (! empty($product->images[0]))
-                <img src="{{ $product->images[0] }}" alt=""
+                <img src="{{ $product->images[0] }}" alt="" class="product-card__img" data-role="primary"
                      @if ($eager) fetchpriority="high" @else loading="lazy" decoding="async" @endif>
+                @if ($secondImage)
+                    {{-- A second product photo, shown only on hover, gives a
+                         quick alternate angle without leaving the grid. --}}
+                    <img src="{{ $secondImage }}" alt="" class="product-card__img product-card__img--hover" loading="lazy" decoding="async">
+                @endif
             @else
                 <div class="ph-icon-wrap"><i class="bi bi-box-seam" aria-hidden="true"></i></div>
             @endif
@@ -60,22 +76,50 @@
                 </span>
             @endif
         </div>
+        @if ($colorSwatches->isNotEmpty())
+            {{-- A quick color preview — clicking one swaps the photo above to
+                 that variant's own image, so customers can browse colors
+                 without leaving the grid. It never replaces the full picker
+                 on the product page, so nothing here feeds the cart form. --}}
+            <div class="product-card__swatches" role="group" aria-label="Preview other colors">
+                @foreach ($colorSwatches->take(5) as $variant)
+                    @php $cssColor = \App\Services\Html\ColorSwatch::resolve($variant->color); @endphp
+                    <button type="button" class="product-card__swatch js-card-swatch"
+                            style="{{ $cssColor ? 'background:'.$cssColor : '' }}"
+                            data-image="{{ $variant->image }}"
+                            aria-pressed="false"
+                            aria-label="Preview in {{ $variant->color }}"></button>
+                @endforeach
+                @if ($colorSwatches->count() > 5)
+                    <span class="product-card__swatch-more">+{{ $colorSwatches->count() - 5 }}</span>
+                @endif
+            </div>
+        @endif
         @if ($isLowStock)
             <div class="product-card__stock-hint"><i class="bi bi-exclamation-circle-fill" aria-hidden="true"></i> Only a few left</div>
         @elseif ($optionCount > 1)
             <div class="product-card__options-hint">{{ $optionCount }} options available</div>
         @endif
-        @if ($firstVariant && ! $isOutOfStock)
+        @if ($firstVariant && ! $isOutOfStock && $optionCount > 1)
+            {{-- Several variants exist (color/size…) — adding $firstVariant
+                 straight to the cart would silently pick one for the
+                 customer, so this sends them to the product page to choose
+                 instead of guessing. --}}
+            <a href="{{ route('products.show', $product) }}" class="btn btn-accent product-card__cta w-100 mt-2 btn-sm">
+                <i class="bi bi-ui-checks" aria-hidden="true"></i> Options
+                <span class="visually-hidden">for {{ $product->title }}</span>
+            </a>
+        @elseif ($firstVariant && ! $isOutOfStock)
             <form action="{{ route('cart.store') }}" method="POST">
                 @csrf
                 <input type="hidden" name="product_variant_id" value="{{ $firstVariant->id }}">
-                <button type="submit" class="btn btn-accent w-100 mt-2 btn-sm">
+                <button type="submit" class="btn btn-accent product-card__cta w-100 mt-2 btn-sm">
                     <i class="bi bi-cart-plus" aria-hidden="true"></i> Add to Cart
                     <span class="visually-hidden">— {{ $product->title }}</span>
                 </button>
             </form>
         @else
-            <button type="button" class="btn btn-accent w-100 mt-2 btn-sm" disabled>
+            <button type="button" class="btn btn-accent product-card__cta w-100 mt-2 btn-sm" disabled>
                 Out of Stock<span class="visually-hidden"> — {{ $product->title }}</span>
             </button>
         @endif
