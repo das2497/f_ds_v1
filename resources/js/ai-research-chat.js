@@ -111,6 +111,55 @@ document.addEventListener('DOMContentLoaded', function () {
         return avatar;
     }
 
+    function copyToClipboard(text) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).catch(function () { fallbackCopy(text); });
+        } else {
+            fallbackCopy(text);
+        }
+    }
+
+    // navigator.clipboard needs a secure context (https or localhost) and
+    // isn't available in every browser — this covers the rest via the
+    // old hidden-textarea + execCommand trick.
+    function fallbackCopy(text) {
+        var textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.left = '-9999px';
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        try { document.execCommand('copy'); } catch (e) { /* no-op — nothing more to try */ }
+        document.body.removeChild(textarea);
+    }
+
+    // `getText` is a function, not a string, so a copy button attached to
+    // the still-streaming assistant bubble always copies whatever text is
+    // current at click time rather than a snapshot taken when the button
+    // was created.
+    function buildCopyButton(getText) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'ai-chat-copy-btn';
+        btn.title = 'Copy message';
+        btn.setAttribute('aria-label', 'Copy message');
+        btn.innerHTML = '<i class="bi bi-clipboard"></i>';
+
+        btn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            copyToClipboard(getText());
+            btn.innerHTML = '<i class="bi bi-check2"></i>';
+            btn.classList.add('is-copied');
+            setTimeout(function () {
+                btn.innerHTML = '<i class="bi bi-clipboard"></i>';
+                btn.classList.remove('is-copied');
+            }, 1200);
+        });
+
+        return btn;
+    }
+
     function buildBubbleRow(role, content) {
         var row = document.createElement('div');
         row.className = 'ai-chat-row ai-chat-row--' + (role === 'user' ? 'user' : 'assistant');
@@ -124,8 +173,13 @@ document.addEventListener('DOMContentLoaded', function () {
             bubble.innerHTML = renderMarkdownLite(content);
         }
 
+        var wrap = document.createElement('div');
+        wrap.className = 'ai-chat-bubble-wrap';
+        wrap.appendChild(bubble);
+        wrap.appendChild(buildCopyButton(function () { return content; }));
+
         row.appendChild(buildAvatar(role));
-        row.appendChild(bubble);
+        row.appendChild(wrap);
         return row;
     }
 
@@ -455,8 +509,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 bubbleRow.className = 'ai-chat-row ai-chat-row--assistant';
                 bubbleEl = document.createElement('div');
                 bubbleEl.className = 'ai-chat-bubble ai-chat-bubble--assistant';
+
+                var wrap = document.createElement('div');
+                wrap.className = 'ai-chat-bubble-wrap';
+                wrap.appendChild(bubbleEl);
+                wrap.appendChild(buildCopyButton(function () { return liveText; }));
+
                 bubbleRow.appendChild(buildAvatar('assistant'));
-                bubbleRow.appendChild(bubbleEl);
+                bubbleRow.appendChild(wrap);
                 messagesEl.appendChild(bubbleRow);
             }
         }
@@ -494,7 +554,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (!bubbleEl) {
                     renderBubble('assistant', data.reply);
                 } else {
-                    bubbleEl.innerHTML = renderMarkdownLite(data.reply);
+                    liveText = data.reply;
+                    bubbleEl.innerHTML = renderMarkdownLite(liveText);
                 }
 
                 if (data.sources && data.sources.length) renderSources(data.sources);

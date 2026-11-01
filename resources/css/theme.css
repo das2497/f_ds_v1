@@ -1455,9 +1455,46 @@ body {
 .ai-chat-avatar--assistant { background: var(--color-accent); color: #fff; }
 .ai-chat-avatar--user { background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text-muted); }
 
-.ai-chat-bubble {
+.ai-chat-bubble-wrap {
+  position: relative;
+  display: inline-block;
   max-width: calc(100% - 36px);
-  padding: 0.65rem 0.9rem;
+}
+.ai-chat-copy-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  font-size: 0.72rem;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.12s ease, background 0.12s ease;
+}
+.ai-chat-row--assistant .ai-chat-copy-btn {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+}
+.ai-chat-bubble-wrap:hover .ai-chat-copy-btn,
+.ai-chat-copy-btn:focus-visible {
+  opacity: 1;
+}
+.ai-chat-copy-btn:hover { background: rgba(255, 255, 255, 0.35); }
+.ai-chat-row--assistant .ai-chat-copy-btn:hover { background: var(--color-bg); }
+.ai-chat-copy-btn.is-copied { opacity: 1; color: var(--color-success, #16a34a); }
+
+.ai-chat-bubble {
+  max-width: 100%;
+  padding: 0.65rem 2rem 0.65rem 0.9rem;
   border-radius: var(--radius-card);
   font-size: 0.88rem;
   line-height: 1.5;
@@ -1531,8 +1568,15 @@ body {
 }
 
 @media (max-width: 576px) {
-  .ai-chat-bubble { max-width: calc(100% - 20px); font-size: 0.85rem; }
+  .ai-chat-bubble-wrap { max-width: calc(100% - 20px); }
+  .ai-chat-bubble { font-size: 0.85rem; }
   .ai-chat-cards, .ai-chat-cards-header { margin-left: 0; }
+}
+
+/* Touch screens have no hover state, so the copy button would otherwise
+   never reveal itself — keep it faintly visible at all times instead. */
+@media (hover: none) {
+  .ai-chat-copy-btn { opacity: 0.55; }
 }
 
 /* ---------- AI Chat: conversation sidebar ---------- */
