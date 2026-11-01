@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\AnalyticsUtmController;
 use App\Http\Controllers\Admin\AuditLogController as AdminAuditLogController;
 use App\Http\Controllers\Admin\CarouselSlideController;
 use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\CustomerController as AdminCustomerController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\HomepageSectionController;
 use App\Http\Controllers\Admin\MaintenanceController as AdminMaintenanceController;
@@ -174,6 +175,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin|super-ad
 
     Route::get('/refunds', [AdminRefundController::class, 'index'])->name('refunds');
     Route::post('/refunds', [AdminRefundController::class, 'store'])->name('refunds.store');
+
+    Route::get('/customers', [AdminCustomerController::class, 'index'])->name('customers');
+    Route::get('/customers/{customer}', [AdminCustomerController::class, 'show'])->name('customers.show');
 });
 
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:super-admin'])->group(function () {

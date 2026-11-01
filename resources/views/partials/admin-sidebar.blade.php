@@ -33,6 +33,11 @@
     <a class="nav-link {{ request()->routeIs('admin.order-retry') ? 'active' : '' }}" href="{{ route('admin.order-retry') }}"><i class="bi bi-arrow-repeat"></i> Retry Console</a>
   </nav>
 
+  <div class="nav-section-label">Customers</div>
+  <nav class="nav flex-column">
+    <a class="nav-link {{ request()->routeIs('admin.customers*') ? 'active' : '' }}" href="{{ route('admin.customers') }}"><i class="bi bi-person-circle"></i> Customers</a>
+  </nav>
+
   <div class="nav-section-label">Financials &amp; Taxes</div>
   <nav class="nav flex-column">
     <a class="nav-link {{ request()->routeIs('admin.tax-rates') ? 'active' : '' }}" href="{{ route('admin.tax-rates') }}"><i class="bi bi-percent"></i> Tax Rates</a>
