@@ -224,6 +224,29 @@ class ProductController extends Controller
         return redirect()->route('admin.products')->with('status', "\"{$product->title}\" published to the store.");
     }
 
+    public function toggleStatus(Product $product): RedirectResponse
+    {
+        $product->update(['is_active' => ! $product->is_active]);
+
+        AuditLog::record(
+            $product->is_active ? 'Product Activated' : 'Product Deactivated',
+            "\"{$product->title}\" (#{$product->id})"
+        );
+
+        return back()->with('status', "\"{$product->title}\" is now ".($product->is_active ? 'active.' : 'inactive.'));
+    }
+
+    public function destroy(Product $product): RedirectResponse
+    {
+        $title = $product->title;
+
+        $product->delete();
+
+        AuditLog::record('Product Deleted', "\"{$title}\" (#{$product->id})");
+
+        return redirect()->route('admin.products')->with('status', "\"{$title}\" was deleted.");
+    }
+
     public function edit(Product $product): View
     {
         $product->load('variants', 'vendorProductCandidate');
