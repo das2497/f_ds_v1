@@ -178,6 +178,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin|super-ad
 
     Route::get('/customers', [AdminCustomerController::class, 'index'])->name('customers');
     Route::get('/customers/{customer}', [AdminCustomerController::class, 'show'])->name('customers.show');
+    Route::post('/customers/{customer}/suspend', [AdminCustomerController::class, 'suspend'])->name('customers.suspend');
+    Route::post('/customers/{customer}/reactivate', [AdminCustomerController::class, 'reactivate'])->name('customers.reactivate');
+    Route::delete('/customers/{customer}', [AdminCustomerController::class, 'destroy'])->name('customers.destroy');
 });
 
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:super-admin'])->group(function () {

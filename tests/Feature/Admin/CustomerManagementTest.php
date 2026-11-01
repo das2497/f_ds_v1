@@ -55,7 +55,7 @@ class CustomerManagementTest extends TestCase
         $this->makeOrder($customer, 10, 'pending_payment');
 
         $staff = User::factory()->create(['name' => 'Staffy McStaff']);
-        $staff->assignRole('admin');
+        $staff->assignRole(['customer', 'admin']);
 
         $response = $this->actingAs($actor)->get(route('admin.customers'));
 
@@ -103,7 +103,7 @@ class CustomerManagementTest extends TestCase
         $actor = $this->admin();
 
         $staff = User::factory()->create();
-        $staff->assignRole('admin');
+        $staff->assignRole(['customer', 'admin']);
 
         $this->actingAs($actor)->get(route('admin.customers.show', $staff))->assertNotFound();
     }
@@ -121,5 +121,77 @@ class CustomerManagementTest extends TestCase
     public function test_a_guest_is_redirected_away_from_customer_management(): void
     {
         $this->get(route('admin.customers'))->assertRedirect(route('login'));
+    }
+
+    public function test_an_admin_can_suspend_and_reactivate_a_customer(): void
+    {
+        $actor = $this->admin();
+
+        $customer = User::factory()->create();
+        $customer->assignRole('customer');
+
+        $this->actingAs($actor)->post(route('admin.customers.suspend', $customer))
+            ->assertRedirect()
+            ->assertSessionHas('status');
+
+        $this->assertTrue($customer->fresh()->isSuspended());
+        $this->assertDatabaseHas('audit_logs', ['action' => 'Customer Suspended']);
+
+        $this->actingAs($actor)->post(route('admin.customers.reactivate', $customer))
+            ->assertRedirect()
+            ->assertSessionHas('status');
+
+        $this->assertFalse($customer->fresh()->isSuspended());
+        $this->assertDatabaseHas('audit_logs', ['action' => 'Customer Reactivated']);
+    }
+
+    public function test_a_suspended_customer_cannot_log_in(): void
+    {
+        $this->seed(RoleSeeder::class);
+
+        $customer = User::factory()->create(['suspended_at' => now()]);
+        $customer->assignRole('customer');
+
+        $response = $this->post('/login', [
+            'email' => $customer->email,
+            'password' => 'password',
+        ]);
+
+        $this->assertGuest();
+        $response->assertSessionHasErrors('email');
+    }
+
+    public function test_an_admin_can_delete_a_customer(): void
+    {
+        $actor = $this->admin();
+
+        $customer = User::factory()->create();
+        $customer->assignRole('customer');
+        $order = $this->makeOrder($customer, 50, 'paid');
+
+        $response = $this->actingAs($actor)->delete(route('admin.customers.destroy', $customer));
+
+        $response->assertRedirect(route('admin.customers'));
+        $response->assertSessionHas('status');
+
+        $this->assertDatabaseMissing('users', ['id' => $customer->id]);
+        $this->assertDatabaseHas('audit_logs', ['action' => 'Customer Deleted']);
+
+        // Orders stay around for records, just detached from the deleted account.
+        $this->assertDatabaseHas('orders', ['id' => $order->id, 'user_id' => null]);
+    }
+
+    public function test_a_staff_member_cannot_be_suspended_or_deleted_via_customer_management(): void
+    {
+        $actor = $this->admin();
+
+        $staff = User::factory()->create();
+        $staff->assignRole(['customer', 'admin']);
+
+        $this->actingAs($actor)->post(route('admin.customers.suspend', $staff))->assertNotFound();
+        $this->actingAs($actor)->delete(route('admin.customers.destroy', $staff))->assertNotFound();
+
+        $this->assertFalse($staff->fresh()->isSuspended());
+        $this->assertDatabaseHas('users', ['id' => $staff->id]);
     }
 }

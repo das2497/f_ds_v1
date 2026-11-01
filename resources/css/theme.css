@@ -1652,6 +1652,36 @@ body {
   font-size: 0.9rem;
 }
 
+.table-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.table-actions form {
+  display: inline-flex;
+}
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  line-height: 1;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.btn-icon:hover {
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+.btn-icon-accent:hover { color: var(--color-accent); border-color: var(--color-accent); }
+.btn-icon-positive:hover { color: var(--color-positive); border-color: var(--color-positive); }
+.btn-icon-danger:hover { color: var(--color-danger); border-color: var(--color-danger); }
+
 /* ---------- Analytics / Charts ---------- */
 
 .stat-delta {

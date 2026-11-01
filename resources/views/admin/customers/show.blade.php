@@ -1,11 +1,40 @@
 <x-admin-layout :title="$customer->name">
+    @if (session('status'))
+        <div class="alert alert-success">{{ session('status') }}</div>
+    @endif
+
     <div class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-2">
         <div>
-            <h4 class="mb-1">{{ $customer->name }}</h4>
+            <h4 class="mb-1">
+                {{ $customer->name }}
+                @if ($customer->isSuspended())
+                    <span class="badge rounded-pill" style="background:#FEE2E2;color:#991B1B">Suspended</span>
+                @else
+                    <span class="badge rounded-pill" style="background:#DCFCE7;color:#166534">Active</span>
+                @endif
+            </h4>
             <div class="text-muted-slate small">{{ $customer->email }}</div>
             <div class="text-muted-slate small">Joined {{ $customer->created_at->format('M j, Y') }}</div>
         </div>
-        <a href="{{ route('admin.customers') }}" class="small text-accent text-decoration-none"><i class="bi bi-arrow-left"></i> Back to Customers</a>
+        <div class="d-flex align-items-center gap-2">
+            @if ($customer->isSuspended())
+                <form action="{{ route('admin.customers.reactivate', $customer) }}" method="POST">
+                    @csrf
+                    <button type="submit" class="btn btn-sm btn-outline-secondary"><i class="bi bi-play-circle"></i> Reactivate</button>
+                </form>
+            @else
+                <form action="{{ route('admin.customers.suspend', $customer) }}" method="POST" onsubmit="return confirm('Suspend {{ $customer->name }}\'s account? They won\'t be able to sign in.');">
+                    @csrf
+                    <button type="submit" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pause-circle"></i> Suspend</button>
+                </form>
+            @endif
+            <form action="{{ route('admin.customers.destroy', $customer) }}" method="POST" onsubmit="return confirm('Permanently delete {{ $customer->name }}\'s account? This cannot be undone.');">
+                @csrf
+                @method('DELETE')
+                <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash3"></i> Delete</button>
+            </form>
+            <a href="{{ route('admin.customers') }}" class="small text-accent text-decoration-none ms-2"><i class="bi bi-arrow-left"></i> Back to Customers</a>
+        </div>
     </div>
 
     <div class="row g-3 mb-4">

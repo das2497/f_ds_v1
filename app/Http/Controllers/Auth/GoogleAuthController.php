@@ -50,6 +50,10 @@ class GoogleAuthController extends Controller
         }
 
         if ($user) {
+            if ($user->isSuspended()) {
+                return redirect()->route('login')->with('error', 'This account has been suspended. Contact support for help.');
+            }
+
             $user->update([
                 'google_id' => $googleUser->getId(),
                 'avatar' => $googleUser->getAvatar(),
