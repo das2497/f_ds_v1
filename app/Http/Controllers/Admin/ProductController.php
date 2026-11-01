@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\AiProductScore;
 use App\Models\AuditLog;
 use App\Models\Category;
 use App\Models\Product;
@@ -287,6 +288,15 @@ class ProductController extends Controller
 
             $candidate->update(['status' => 'listed']);
 
+            // Carries the AI's sourcing verdict (if this candidate was ever
+            // scored during research) forward onto the real product, so the
+            // "why we sourced this" reasoning is still visible after
+            // publishing instead of only living on the now-hard-to-reach
+            // research page.
+            AiProductScore::where('vendor', $candidate->vendor)
+                ->where('vendor_external_id', $candidate->vendor_external_id)
+                ->update(['product_id' => $product->id]);
+
             return $product;
         });
 
@@ -318,7 +328,7 @@ class ProductController extends Controller
 
     public function edit(Product $product): View
     {
-        $product->load('variants', 'vendorProductCandidate');
+        $product->load('variants', 'vendorProductCandidate', 'aiScore');
         $categories = Category::with('subcategories')->orderBy('sort_order')->get();
 
         $usedVendorSkus = $product->variants->pluck('vendor_sku')->filter()->all();

@@ -43,8 +43,8 @@ class ProductScoringService
      * genuine input change (cost, listed_count, price, ...), or when the
      * caller explicitly asks for a refresh.
      *
-     * @param  array{title: string, category: ?string, vendor: string, base_cost: float, variant_count: int, listed_count: ?int, suggested_sell_price: ?float, free_shipping: bool, weight_lb: ?float, demand_keyword_match: ?string}  $input
-     * @return array{score: int, verdict: string, reasons: array<int, string>, risks: array<int, string>, suggested_price: ?float, cached: bool}
+     * @param  array{title: string, category: ?string, vendor: string, base_cost: float, variant_count: int, listed_count: ?int, suggested_sell_price: ?float, free_shipping: bool, weight_lb: ?float, demand_signal?: array<string, mixed>, demand_keyword_match?: ?string}  $input
+     * @return array{score: int, verdict: string, reasons: array<int, string>, risks: array<int, string>, suggested_price: ?float, cached: bool, scored_at: string}
      */
     public function scoreProduct(string $vendor, string $externalId, array $input, bool $forceRefresh = false): array
     {
@@ -62,21 +62,23 @@ class ProductScoringService
                 'risks' => $cached->risks,
                 'suggested_price' => $cached->suggested_price === null ? null : (float) $cached->suggested_price,
                 'cached' => true,
+                'scored_at' => $cached->scored_at->toIso8601String(),
             ];
         }
 
         $result = $this->requestScore($input);
+        $scoredAt = now();
 
         AiProductScore::updateOrCreate(
             ['vendor' => $vendor, 'vendor_external_id' => $externalId],
-            [...$result, 'input_hash' => $hash, 'scored_at' => now()]
+            [...$result, 'input_hash' => $hash, 'scored_at' => $scoredAt]
         );
 
-        return [...$result, 'cached' => false];
+        return [...$result, 'cached' => false, 'scored_at' => $scoredAt->toIso8601String()];
     }
 
     /**
-     * @param  array{title: string, category: ?string, vendor: string, base_cost: float, variant_count: int, listed_count: ?int, suggested_sell_price: ?float, free_shipping: bool, weight_lb: ?float, demand_keyword_match: ?string}  $input
+     * @param  array{title: string, category: ?string, vendor: string, base_cost: float, variant_count: int, listed_count: ?int, suggested_sell_price: ?float, free_shipping: bool, weight_lb: ?float, demand_signal?: array<string, mixed>, demand_keyword_match?: ?string}  $input
      * @return array{score: int, verdict: string, reasons: array<int, string>, risks: array<int, string>, suggested_price: ?float}
      */
     private function requestScore(array $input): array
@@ -144,9 +146,15 @@ class ProductScoringService
             already list this exact product on the vendor's marketplace — higher
             can mean proven demand but also more competition; null if unknown),
             suggested_sell_price (the vendor's own price suggestion, or null),
-            free_shipping, weight_lb, and demand_keyword_match (a real search
-            term recent visitors to this store searched for that matches this
-            product, or null if there's no match).
+            free_shipping, weight_lb, and demand_signal — real store-visitor
+            activity from the last 30 days for this product's title:
+            matching_searches (real search terms visitors typed, with counts),
+            matching_product_views_30d (how many times a similarly-named
+            product already in the store was viewed), and top_categories_viewed
+            (which categories those views cluster in, when the exact keyword
+            came back thin). Treat an empty/zero demand_signal as "no evidence
+            either way", not as a negative signal on its own — plenty of good
+            picks have no prior search history yet.
 
             Judge the product on: likely sell-through (is this solving a real,
             specific need, or a generic/saturated item with no distinguishing

@@ -120,9 +120,10 @@
                     </div>
                     <div id="ai-score-error" class="d-none alert alert-warning mb-0 small"></div>
                     <div id="ai-score-result" class="d-none">
-                        <div class="d-flex align-items-center gap-3 mb-2">
+                        <div class="d-flex align-items-center gap-3 mb-2 flex-wrap">
                             <div id="ai-score-number" class="fw-bold fs-3"></div>
                             <div id="ai-score-verdict" class="small"></div>
+                            <span id="ai-score-stale" class="small text-warning d-none"><i class="bi bi-clock-history"></i> <span id="ai-score-stale-text"></span></span>
                             <button type="button" id="ai-score-rescore-btn" class="btn btn-link btn-sm p-0 d-none">Cached result &middot; Re-score</button>
                         </div>
                         <div class="small text-muted-slate fw-semibold mb-1">Why</div>
@@ -131,9 +132,22 @@
                             <div class="small text-danger fw-semibold mb-1"><i class="bi bi-exclamation-triangle"></i> Risks</div>
                             <ul id="ai-score-risks" class="small text-danger mb-2"></ul>
                         </div>
-                        <div id="ai-score-price-wrap" class="d-none small">
+                        <div id="ai-score-price-wrap" class="d-none small mb-2">
                             <span class="text-muted-slate">AI-suggested sell price:</span> <strong id="ai-score-price"></strong>
                         </div>
+                        <details class="small text-muted-slate">
+                            <summary class="text-accent" style="cursor:pointer"><i class="bi bi-info-circle"></i> How this score works</summary>
+                            <div class="mt-2">
+                                The AI judges every product on four things, using only the data shown on this page — base cost, variants, how many other sellers already list it, vendor shipping info, and real store search/view activity from the last 30 days. It never guesses at trends or claims something is "trending" unless that's backed by real demand data.
+                                <ul class="mb-2 mt-2">
+                                    <li><strong>Likely sell-through</strong> — does this solve a specific need, or is it a generic, saturated item with no angle?</li>
+                                    <li><strong>Margin potential</strong> — a 2&ndash;3x cost-to-price markup is normal for dropshipping; a high base cost that can't clear that is flagged.</li>
+                                    <li><strong>Shipping practicality</strong> — lightweight and compact is lower-risk; heavy, fragile, or bulky items raise return and shipping-cost risk.</li>
+                                    <li><strong>Legal/platform risk</strong> — flags anything that looks like an unlicensed trademarked character, logo, or brand name.</li>
+                                </ul>
+                                The score (1&ndash;10) and suggested price are a starting point for your own judgement, not a guarantee — re-score if the vendor's cost or listing count has changed since it was last scored.
+                            </div>
+                        </details>
                     </div>
                 </div>
             </div>
@@ -175,6 +189,23 @@
                     document.getElementById('ai-score-number').textContent = data.score + '/10';
                     document.getElementById('ai-score-verdict').textContent = data.verdict;
                     aiRescoreBtn.classList.toggle('d-none', ! data.cached);
+
+                    const staleEl = document.getElementById('ai-score-stale');
+                    const staleTextEl = document.getElementById('ai-score-stale-text');
+                    if (data.scored_at) {
+                        const ageDays = Math.round((Date.now() - new Date(data.scored_at).getTime()) / 86400000);
+                        staleTextEl.textContent = ageDays < 1 ? 'Scored today' : 'Scored ' + ageDays + ' day' + (ageDays === 1 ? '' : 's') + ' ago';
+                        // Demand signals only look at the last 30 days — past
+                        // that window a cached verdict is grounded in search
+                        // activity that's no longer the data check_demand
+                        // would return today, so flag it rather than let an
+                        // old score read as current.
+                        staleEl.classList.toggle('text-warning', ageDays > 30);
+                        staleEl.classList.toggle('text-muted-slate', ageDays <= 30);
+                        staleEl.classList.remove('d-none');
+                    } else {
+                        staleEl.classList.add('d-none');
+                    }
 
                     const reasonsList = document.getElementById('ai-score-reasons');
                     reasonsList.innerHTML = '';

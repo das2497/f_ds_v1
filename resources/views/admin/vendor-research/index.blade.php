@@ -140,14 +140,41 @@
         </div>
     @endif
 
-    <div class="row g-3">
+    @if (! empty($results))
+        <div id="research-score-toolbar" class="d-flex align-items-center flex-wrap gap-2 mb-3" data-scores-url="{{ route($routeBase.'.scores') }}">
+            <button type="button" id="research-score-all" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-stars"></i> Score All Visible
+            </button>
+            <span id="research-score-progress" class="small text-muted-slate d-none"></span>
+
+            <div class="ms-auto d-flex align-items-center gap-2">
+                <label class="small text-muted-slate mb-0" for="research-score-sort">Card order</label>
+                <select id="research-score-sort" class="form-select form-select-sm" style="width:auto">
+                    <option value="">Default</option>
+                    <option value="score_desc">AI Score: High to Low</option>
+                </select>
+                <label class="small text-muted-slate mb-0" for="research-min-score">Min score</label>
+                <select id="research-min-score" class="form-select form-select-sm" style="width:auto">
+                    <option value="">Any</option>
+                    <option value="7">7+</option>
+                    <option value="8">8+</option>
+                    <option value="9">9+</option>
+                </select>
+            </div>
+        </div>
+    @endif
+
+    <div class="row g-3" id="research-grid">
         @foreach ($results as $item)
             @php $isSelected = $selectedExternalIds->contains($item['vendor_external_id']); @endphp
-            <div class="col-6 col-md-4 col-lg-3">
+            <div class="col-6 col-md-4 col-lg-3 research-card-col"
+                 data-external-id="{{ $item['vendor_external_id'] }}"
+                 data-score-url="{{ route($routeBase.'.score', $item['vendor_external_id']) }}">
                 <div class="research-card h-100 d-flex flex-column">
                     <a href="{{ route($routeBase.'.show', $item['vendor_external_id']) }}" class="text-decoration-none text-dark d-block">
                         <div class="research-card__image">
                             <img src="{{ $item['preview_image_url'] ?? 'https://placehold.co/300x300/F8FAFC/64748B?text=No+Image' }}" alt="{{ $item['title'] }}" loading="lazy">
+                            <span class="research-card__score-badge d-none" data-score-badge></span>
                         </div>
                     </a>
                     <div class="research-card__body d-flex flex-column flex-grow-1">
@@ -233,4 +260,6 @@
             </ul>
         </nav>
     @endif
+
+    @vite(['resources/js/vendor-research.js'])
 </x-admin-layout>

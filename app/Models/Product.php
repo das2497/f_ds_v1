@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable([
     'category_id', 'subcategory_id', 'vendor_product_candidate_id', 'source_vendor',
@@ -75,6 +76,18 @@ class Product extends Model
     public function reviews(): HasMany
     {
         return $this->hasMany(Review::class);
+    }
+
+    /**
+     * The AI sourcing score this product was scored with during research,
+     * when it was listed from a scored vendor candidate — read-only here;
+     * re-scoring only ever happens from the vendor research page.
+     *
+     * @return HasOne<AiProductScore, $this>
+     */
+    public function aiScore(): HasOne
+    {
+        return $this->hasOne(AiProductScore::class);
     }
 
     public function isPurchasedBy(?User $user): bool

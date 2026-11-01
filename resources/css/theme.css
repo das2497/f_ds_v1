@@ -1402,6 +1402,7 @@ body {
   transform: translateY(-2px);
 }
 .research-card__image {
+  position: relative;
   background: var(--color-bg);
   aspect-ratio: 1 / 1;
   display: flex;
@@ -1423,6 +1424,21 @@ body {
 }
 .research-card__meta { font-size: 0.78rem; color: var(--color-text-muted); }
 .research-card__cost { font-weight: 800; color: var(--color-heading); font-size: 1rem; }
+
+.research-card__score-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #fff;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.25);
+}
+.research-card__score-badge.is-high { background: var(--color-success); }
+.research-card__score-badge.is-mid { background: #D97706; }
+.research-card__score-badge.is-low { background: var(--color-danger); }
 
 /* ---------- AI Research Chat (Admin) ---------- */
 

@@ -19,7 +19,7 @@
     "src": "node_modules/bootstrap-icons/font/fonts/bootstrap-icons.woff2"
   },
   "resources/css/app.css": {
-    "file": "assets/app-DhQjlUBT.css",
+    "file": "assets/app-DuFHbt63.css",
     "name": "app",
     "names": [
       "app.css"
@@ -77,5 +77,11 @@
       "_chart-CyiRuMrX.js",
       "_chartjs-plugin-datalabels.esm-xSqVLvv5.js"
     ]
+  },
+  "resources/js/vendor-research.js": {
+    "file": "assets/vendor-research-Bc_sGNUX.js",
+    "name": "vendor-research",
+    "src": "resources/js/vendor-research.js",
+    "isEntry": true
   }
 }

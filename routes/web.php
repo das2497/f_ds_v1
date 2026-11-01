@@ -145,6 +145,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin|super-ad
 
     Route::get('/products-research-printful', [VendorResearchController::class, 'index'])
         ->defaults('vendor', 'printful')->name('products-research-printful');
+    Route::get('/products-research-printful/scores', [VendorResearchController::class, 'scores'])
+        ->defaults('vendor', 'printful')->name('products-research-printful.scores');
     Route::get('/products-research-printful/{externalId}', [VendorResearchController::class, 'show'])
         ->defaults('vendor', 'printful')->name('products-research-printful.show');
     Route::post('/products-research-printful/{externalId}/select', [VendorResearchController::class, 'select'])
@@ -154,6 +156,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin|super-ad
 
     Route::get('/products-research-cjd', [VendorResearchController::class, 'index'])
         ->defaults('vendor', 'cj')->name('products-research-cjd');
+    Route::get('/products-research-cjd/scores', [VendorResearchController::class, 'scores'])
+        ->defaults('vendor', 'cj')->name('products-research-cjd.scores');
     Route::get('/products-research-cjd/{externalId}', [VendorResearchController::class, 'show'])
         ->defaults('vendor', 'cj')->name('products-research-cjd.show');
     Route::post('/products-research-cjd/{externalId}/select', [VendorResearchController::class, 'select'])

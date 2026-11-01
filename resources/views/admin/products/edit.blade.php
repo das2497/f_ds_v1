@@ -220,6 +220,33 @@
                     <div class="form-text">MP4 only, 20MB max.</div>
                 </div>
 
+                @if ($product->aiScore)
+                    <div class="table-admin p-4 mb-3">
+                        <h6 class="mb-3"><i class="bi bi-stars text-accent"></i> AI Sourcing Score</h6>
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <span class="fw-bold fs-4">{{ $product->aiScore->score }}/10</span>
+                            <span class="small text-muted-slate">{{ $product->aiScore->verdict }}</span>
+                        </div>
+                        @if ($product->aiScore->reasons)
+                            <div class="small text-muted-slate fw-semibold mb-1">Why it was sourced</div>
+                            <ul class="small mb-2">
+                                @foreach ($product->aiScore->reasons as $reason)
+                                    <li>{{ $reason }}</li>
+                                @endforeach
+                            </ul>
+                        @endif
+                        @if ($product->aiScore->risks)
+                            <div class="small text-danger fw-semibold mb-1"><i class="bi bi-exclamation-triangle"></i> Risks flagged at the time</div>
+                            <ul class="small text-danger mb-2">
+                                @foreach ($product->aiScore->risks as $risk)
+                                    <li>{{ $risk }}</li>
+                                @endforeach
+                            </ul>
+                        @endif
+                        <div class="small text-muted-slate">Scored {{ $product->aiScore->scored_at->diffForHumans() }} — from the {{ $product->source_vendor === 'cj' ? 'CJ Dropshipping' : 'Printful' }} research page, before this product was customized for your shop.</div>
+                    </div>
+                @endif
+
                 <div class="table-admin p-4">
                     <h6 class="mb-3">Publish</h6>
                     <div class="form-check mb-3">

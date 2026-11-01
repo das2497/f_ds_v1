@@ -4,8 +4,9 @@ namespace App\Http\Controllers\Admin;
 
 use App\Exceptions\VendorApiException;
 use App\Http\Controllers\Controller;
-use App\Models\AnalyticsDemandLog;
+use App\Models\AiProductScore;
 use App\Models\VendorProductCandidate;
+use App\Services\AI\DemandSignalService;
 use App\Services\AI\ProductScoringService;
 use App\Services\Vendor\CJService;
 use App\Services\Vendor\PrintfulService;
@@ -24,6 +25,7 @@ class VendorResearchController extends Controller
         private readonly PrintfulService $printful,
         private readonly CJService $cj,
         private readonly ProductScoringService $scorer,
+        private readonly DemandSignalService $demand,
     ) {}
 
     public function index(Request $request, string $vendor): View
@@ -158,7 +160,7 @@ class VendorResearchController extends Controller
                 'suggested_sell_price' => $product['suggested_sell_price'] ?? null,
                 'free_shipping' => $product['free_shipping'] ?? false,
                 'weight_lb' => $product['product_weight_lb'] ?? null,
-                'demand_keyword_match' => $this->demandKeywordMatch($product['title']),
+                'demand_signal' => $this->demand->forKeyword($product['title'], $product['category_hint'] ?? null),
             ], $request->boolean('refresh'));
         } catch (VendorApiException $e) {
             return response()->json(['error' => $e->getMessage()], 422);
@@ -168,22 +170,24 @@ class VendorResearchController extends Controller
     }
 
     /**
-     * Cheap substring match against real visitor search terms (last 30
-     * days) — not fuzzy/semantic, just enough to tell the scorer "a real
-     * customer searched for something like this" versus guessing.
+     * Bulk-reads whichever of the given external ids already have a cached
+     * AI score, so the research grid can show a score badge on each card
+     * without round-tripping an Ollama call per product — only the detail
+     * page's "AI Score" button (or "Score all") ever triggers a fresh one.
      */
-    private function demandKeywordMatch(string $title): ?string
+    public function scores(Request $request, string $vendor): JsonResponse
     {
-        $titleLower = strtolower($title);
+        $validated = $request->validate([
+            'ids' => ['required', 'array', 'max:50'],
+            'ids.*' => ['string'],
+        ]);
 
-        return AnalyticsDemandLog::where('event_type', 'search')
-            ->where('created_at', '>=', now()->subDays(30))
-            ->whereNotNull('search_term')
-            ->pluck('search_term')
-            ->unique()
-            ->first(fn ($term) => filled($term) && (
-                str_contains($titleLower, strtolower($term)) || str_contains(strtolower($term), $titleLower)
-            ));
+        $scores = AiProductScore::where('vendor', $vendor)
+            ->whereIn('vendor_external_id', $validated['ids'])
+            ->get(['vendor_external_id', 'score', 'verdict', 'scored_at'])
+            ->keyBy('vendor_external_id');
+
+        return response()->json(['scores' => $scores]);
     }
 
     private function serviceFor(string $vendor): PrintfulService|CJService
