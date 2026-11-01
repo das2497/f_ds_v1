@@ -1535,6 +1535,103 @@ body {
   .ai-chat-cards, .ai-chat-cards-header { margin-left: 0; }
 }
 
+/* ---------- AI Chat: conversation sidebar ---------- */
+
+.ai-chat-sidebar { width: 240px; flex: 0 0 240px; max-height: 68vh; }
+@media (max-width: 767.98px) {
+  .ai-chat-sidebar { width: 100%; flex: 0 0 auto; max-height: 180px; }
+}
+
+.ai-chat-conversation {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 0.75rem;
+  border-bottom: 1px solid var(--color-border);
+  cursor: pointer;
+  font-size: 0.82rem;
+  color: var(--color-text);
+}
+.ai-chat-conversation:hover { background: var(--color-bg); }
+.ai-chat-conversation.is-active { background: var(--color-accent-soft, var(--color-bg)); border-left: 3px solid var(--color-accent); padding-left: calc(0.75rem - 3px); }
+.ai-chat-conversation__title {
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ai-chat-conversation__delete {
+  flex: 0 0 auto;
+  border: none;
+  background: none;
+  color: var(--color-text-muted);
+  padding: 2px 4px;
+  line-height: 1;
+  opacity: 0;
+  transition: opacity 0.1s ease;
+}
+.ai-chat-conversation:hover .ai-chat-conversation__delete { opacity: 1; }
+.ai-chat-conversation__delete:hover { color: var(--color-danger, #dc2626); }
+
+/* ---------- AI Chat: tool-call status line ("Searching CJ for...") ---------- */
+
+.ai-chat-tool-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.9rem;
+  border-radius: var(--radius-card);
+  border-bottom-left-radius: 4px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+}
+.ai-chat-tool-status .spinner-border { width: 0.8rem; height: 0.8rem; border-width: 2px; }
+.ai-chat-tool-status.is-done { color: var(--color-text-muted); }
+
+/* ---------- AI Chat: sources (citations) ---------- */
+
+.ai-chat-sources {
+  margin-left: 36px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+.ai-chat-source-chip {
+  font-size: 0.72rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+}
+
+/* ---------- AI Chat: compare table ---------- */
+
+.ai-chat-compare-wrap { margin-left: 36px; max-width: 100%; overflow-x: auto; }
+.ai-chat-compare {
+  border-collapse: collapse;
+  font-size: 0.8rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+}
+.ai-chat-compare th, .ai-chat-compare td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--color-border);
+  text-align: left;
+  white-space: nowrap;
+}
+.ai-chat-compare th { color: var(--color-text-muted); font-weight: 600; background: var(--color-bg); }
+.ai-chat-compare tr:last-child td { border-bottom: none; }
+.ai-chat-compare img { width: 36px; height: 36px; object-fit: cover; border-radius: 6px; vertical-align: middle; margin-right: 0.4rem; }
+
+@media (max-width: 576px) {
+  .ai-chat-sources, .ai-chat-compare-wrap { margin-left: 0; }
+}
+
 /* ==========================================================================
    Admin Panel Layout (ui_design_notes.txt §10)
    ========================================================================== */

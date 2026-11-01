@@ -19,7 +19,7 @@
     "src": "node_modules/bootstrap-icons/font/fonts/bootstrap-icons.woff2"
   },
   "resources/css/app.css": {
-    "file": "assets/app-BCOAXW6v.css",
+    "file": "assets/app-Bpuu9lej.css",
     "name": "app",
     "names": [
       "app.css"
@@ -38,7 +38,7 @@
     "isEntry": true
   },
   "resources/js/ai-research-chat.js": {
-    "file": "assets/ai-research-chat--m68ZSv9.js",
+    "file": "assets/ai-research-chat-C2-RRhBg.js",
     "name": "ai-research-chat",
     "src": "resources/js/ai-research-chat.js",
     "isEntry": true

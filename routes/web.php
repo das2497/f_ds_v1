@@ -166,6 +166,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin|super-ad
         ->middleware('throttle:20,1')->name('ai-research.chat');
     Route::get('/ai-research/balance', [AiResearchController::class, 'balance'])
         ->middleware('throttle:10,1')->name('ai-research.balance');
+    Route::get('/ai-research/conversations', [AiResearchController::class, 'conversations'])->name('ai-research.conversations');
+    Route::get('/ai-research/conversations/{conversation}', [AiResearchController::class, 'showConversation'])->name('ai-research.conversations.show');
+    Route::delete('/ai-research/conversations/{conversation}', [AiResearchController::class, 'destroyConversation'])->name('ai-research.conversations.destroy');
 
     Route::get('/products-selected', [SelectedProductController::class, 'index'])->name('products-selected');
 
