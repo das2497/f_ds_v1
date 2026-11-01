@@ -180,14 +180,55 @@
     </div>
 
     @if (! empty($results) && ($page > 1 || $hasNextPage))
+        @php
+            $pageUrl = fn ($p) => route($routeBase, array_filter(['q' => $query, 'category' => $category, 'sort' => $sort, 'trending' => $trending ? 1 : null, 'page' => $p]));
+
+            // Build the window of page numbers to show around the current
+            // page, always pinning the first and last page — matches
+            // Laravel's default Bootstrap paginator "1 ... 4 5 6 ... 55"
+            // layout. Only possible when the vendor told us a total page
+            // count; without it we fall back to Previous/Next only.
+            $onEachSide = 2;
+            $pageNumbers = [];
+            if ($totalPages) {
+                $pageNumbers[] = 1;
+                for ($p = max(2, $page - $onEachSide); $p <= min($totalPages - 1, $page + $onEachSide); $p++) {
+                    $pageNumbers[] = $p;
+                }
+                if ($totalPages > 1) {
+                    $pageNumbers[] = $totalPages;
+                }
+                $pageNumbers = array_values(array_unique($pageNumbers));
+                sort($pageNumbers);
+            }
+        @endphp
         <nav class="mt-4" aria-label="Catalog pagination">
-            <ul class="pagination justify-content-center">
+            <ul class="pagination justify-content-center flex-wrap">
                 <li class="page-item {{ $page <= 1 ? 'disabled' : '' }}">
-                    <a class="page-link" href="{{ $page > 1 ? route($routeBase, array_filter(['q' => $query, 'category' => $category, 'sort' => $sort, 'trending' => $trending ? 1 : null, 'page' => $page - 1])) : '#' }}">Previous</a>
+                    <a class="page-link" href="{{ $page > 1 ? $pageUrl($page - 1) : '#' }}">Previous</a>
                 </li>
-                <li class="page-item active"><span class="page-link">{{ $totalPages ? $page.' / '.number_format($totalPages) : $page }}</span></li>
+
+                @if ($pageNumbers)
+                    @php $previousNumber = null; @endphp
+                    @foreach ($pageNumbers as $number)
+                        @if ($previousNumber !== null && $number - $previousNumber > 1)
+                            <li class="page-item disabled"><span class="page-link">&hellip;</span></li>
+                        @endif
+                        <li class="page-item {{ $number === $page ? 'active' : '' }}">
+                            @if ($number === $page)
+                                <span class="page-link">{{ number_format($number) }}</span>
+                            @else
+                                <a class="page-link" href="{{ $pageUrl($number) }}">{{ number_format($number) }}</a>
+                            @endif
+                        </li>
+                        @php $previousNumber = $number; @endphp
+                    @endforeach
+                @else
+                    <li class="page-item active"><span class="page-link">{{ $page }}</span></li>
+                @endif
+
                 <li class="page-item {{ $hasNextPage ? '' : 'disabled' }}">
-                    <a class="page-link" href="{{ $hasNextPage ? route($routeBase, array_filter(['q' => $query, 'category' => $category, 'sort' => $sort, 'trending' => $trending ? 1 : null, 'page' => $page + 1])) : '#' }}">Next</a>
+                    <a class="page-link" href="{{ $hasNextPage ? $pageUrl($page + 1) : '#' }}">Next</a>
                 </li>
             </ul>
         </nav>
