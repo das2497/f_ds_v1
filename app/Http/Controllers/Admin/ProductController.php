@@ -133,6 +133,75 @@ class ProductController extends Controller
         )));
     }
 
+    public function createManual(): View
+    {
+        $categories = Category::with('subcategories')->orderBy('sort_order')->get();
+
+        return view('admin.products.create-manual', compact('categories'));
+    }
+
+    public function storeManual(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'title' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string'],
+            'category_id' => ['required', 'exists:categories,id'],
+            'subcategory_id' => ['nullable', 'exists:subcategories,id'],
+            'price' => ['required', 'numeric', 'min:0'],
+            'compare_at_price' => ['nullable', 'numeric', 'min:0'],
+            'is_active' => ['nullable', 'boolean'],
+            'custom_images' => ['nullable', 'array'],
+            'custom_images.*' => ['file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'video' => ['nullable', 'file', 'mimetypes:video/mp4', 'max:'.self::MAX_VIDEO_KB],
+            'variants' => ['required', 'array', 'min:1'],
+            'variants.*.sku' => ['required', 'string', 'max:100', 'distinct', 'unique:product_variants,sku'],
+            'variants.*.option_label' => ['required', 'string', 'max:255'],
+            'variants.*.color' => ['nullable', 'string', 'max:100'],
+            'variants.*.size' => ['nullable', 'string', 'max:100'],
+            'variants.*.cost_price' => ['required', 'numeric', 'min:0'],
+            'variants.*.weight_lb' => ['nullable', 'numeric', 'min:0'],
+            'variants.*.image' => ['nullable', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+        ]);
+
+        $isActive = $request->boolean('is_active');
+        $imageUrls = $this->mergeImages([], $request->file('custom_images', []));
+        $videoPath = $request->hasFile('video') ? $request->file('video')->store('products/videos', 'public') : null;
+
+        $product = DB::transaction(function () use ($request, $validated, $isActive, $imageUrls, $videoPath) {
+            $product = Product::create([
+                'category_id' => $validated['category_id'],
+                'subcategory_id' => $validated['subcategory_id'] ?? null,
+                'source_vendor' => 'manual',
+                'title' => $validated['title'],
+                'slug' => $this->uniqueSlug($validated['title']),
+                'description' => DescriptionSanitizer::sanitize($validated['description'] ?? null),
+                'price' => $validated['price'],
+                'compare_at_price' => $validated['compare_at_price'] ?? null,
+                'images' => $imageUrls,
+                'video_path' => $videoPath,
+                'is_active' => $isActive,
+            ]);
+
+            foreach ($validated['variants'] as $i => $variant) {
+                $product->variants()->create([
+                    'sku' => $variant['sku'],
+                    'option_label' => $variant['option_label'],
+                    'image' => $this->resolveVariantImage($request, "variants.{$i}.image", null),
+                    'color' => $variant['color'] ?? null,
+                    'size' => $variant['size'] ?? null,
+                    'cost_price' => $variant['cost_price'],
+                    'weight_lb' => $variant['weight_lb'] ?? null,
+                    'stock_status' => 'in_stock',
+                    'is_active' => true,
+                ]);
+            }
+
+            return $product;
+        });
+
+        return redirect()->route('admin.products')->with('status', "\"{$product->title}\" published to the store.");
+    }
+
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([

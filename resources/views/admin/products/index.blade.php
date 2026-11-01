@@ -10,10 +10,14 @@
                 <option value="">All Origins</option>
                 <option value="printful" @selected(request('origin') === 'printful')>Printful</option>
                 <option value="cj" @selected(request('origin') === 'cj')>CJDropshipping</option>
+                <option value="manual" @selected(request('origin') === 'manual')>Manual</option>
             </select>
             <button class="btn btn-sm btn-outline-secondary" type="submit"><i class="bi bi-search"></i></button>
         </form>
-        <a href="{{ route('admin.products-selected') }}" class="btn btn-accent btn-sm"><i class="bi bi-plus-lg"></i> Source New Product</a>
+        <div class="d-flex gap-2">
+            <a href="{{ route('admin.products.create-manual') }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-pencil-square"></i> Add Manually</a>
+            <a href="{{ route('admin.products-selected') }}" class="btn btn-accent btn-sm"><i class="bi bi-plus-lg"></i> Source New Product</a>
+        </div>
     </div>
 
     <div class="table-admin p-3">
@@ -43,6 +47,8 @@
                                 <span class="badge rounded-pill" style="background:#EDE9FE;color:#6D28D9">Printful</span>
                             @elseif ($product->source_vendor === 'cj')
                                 <span class="badge rounded-pill" style="background:#DBEAFE;color:#1E40AF">CJDropshipping</span>
+                            @elseif ($product->source_vendor === 'manual')
+                                <span class="badge rounded-pill" style="background:#F1F5F9;color:#475569">Manual</span>
                             @else
                                 <span class="text-muted-slate small">—</span>
                             @endif
@@ -76,7 +82,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="6" class="text-center text-muted-slate py-4">No products yet — source one from Printful or CJD.</td></tr>
+                    <tr><td colspan="6" class="text-center text-muted-slate py-4">No products yet — source one from Printful or CJD, or add one manually.</td></tr>
                 @endforelse
             </tbody>
         </table>

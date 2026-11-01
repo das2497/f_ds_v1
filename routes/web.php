@@ -127,6 +127,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin|super-ad
     Route::post('/homepage-section-items/{homepageSectionItem}/move', [HomepageSectionController::class, 'moveItem'])->name('homepage-section-items.move');
 
     Route::get('/products', [AdminProductController::class, 'index'])->name('products');
+    Route::get('/products/create-manual', [AdminProductController::class, 'createManual'])->name('products.create-manual');
+    Route::post('/products/manual', [AdminProductController::class, 'storeManual'])->name('products.store-manual');
     Route::get('/products/create/{candidate}', [AdminProductController::class, 'create'])->name('products.create');
     Route::post('/products', [AdminProductController::class, 'store'])->name('products.store');
     Route::get('/products/{product}/edit', [AdminProductController::class, 'edit'])->name('products.edit');
