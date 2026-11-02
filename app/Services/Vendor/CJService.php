@@ -5,6 +5,7 @@ namespace App\Services\Vendor;
 use App\Exceptions\VendorApiException;
 use App\Models\AppSetting;
 use App\Services\Html\DescriptionSanitizer;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 
@@ -448,12 +449,44 @@ class CJService
         return $response->json('data', []);
     }
 
+    /**
+     * CJ enforces a hard 1 request/second limit per API key (HTTP 429,
+     * code 1600200, "QPS limit is 1 time/1second") — a single page like the
+     * product detail view already fires two calls back-to-back
+     * (`/product/query` then `/product/stock/getInventoryByPid`), which is
+     * enough to trip it on its own. `throttle()` spaces every outgoing call
+     * at least 1.1s apart via a cached last-call timestamp, and `retry()` is
+     * a safety net for the cases that still race past it (concurrent admins,
+     * other processes sharing the same key).
+     */
     private function client()
     {
+        $this->throttle();
+
         return Http::baseUrl(self::BASE_URL)
             ->withHeaders(['CJ-Access-Token' => $this->accessToken()])
             ->timeout(15)
+            ->retry(3, 1200, function (\Throwable $exception) {
+                return $exception instanceof RequestException
+                    && $exception->response->status() === 429;
+            })
             ->throw();
+    }
+
+    private function throttle(): void
+    {
+        $minIntervalMs = 1100;
+        $lastCallAt = Cache::get('cj_api_last_call_at');
+
+        if ($lastCallAt !== null) {
+            $elapsedMs = (microtime(true) - $lastCallAt) * 1000;
+
+            if ($elapsedMs < $minIntervalMs) {
+                usleep((int) (($minIntervalMs - $elapsedMs) * 1000));
+            }
+        }
+
+        Cache::put('cj_api_last_call_at', microtime(true), now()->addSeconds(5));
     }
 
     private function accessToken(): string
