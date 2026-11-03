@@ -6,7 +6,7 @@
 <div class="site-topbar py-2">
   <div class="container d-flex justify-content-between align-items-center small">
     <div><i class="bi bi-truck me-1" aria-hidden="true"></i> Free shipping on orders over ${{ $freeShippingThreshold }} &nbsp;|&nbsp; Fast &amp; reliable delivery across USA</div>
-    <div class="d-none d-md-block"><i class="bi bi-geo-alt me-1" aria-hidden="true"></i> USA</div>
+    <div class="d-none d-md-block"><i class="bi bi-geo-alt me-1" aria-hidden="true"></i> <svg class="me-1" width="16" height="12" viewBox="0 0 16 12" aria-hidden="true" style="vertical-align: -1px;"><rect width="16" height="12" fill="#B22234"/><rect y="0.92" width="16" height="0.92" fill="#fff"/><rect y="2.77" width="16" height="0.92" fill="#fff"/><rect y="4.62" width="16" height="0.92" fill="#fff"/><rect y="6.46" width="16" height="0.92" fill="#fff"/><rect y="8.31" width="16" height="0.92" fill="#fff"/><rect y="10.15" width="16" height="0.92" fill="#fff"/><rect width="6.4" height="6.46" fill="#3C3B6E"/></svg> USA</div>
   </div>
 </div>
 

@@ -50,12 +50,12 @@
         @endauth
         <a href="{{ route('products.show', $product) }}" tabindex="-1" aria-hidden="true">
             @if (! empty($product->images[0]))
-                <img src="{{ $product->images[0] }}" alt="" class="product-card__img" data-role="primary"
+                <img src="{{ $product->images[0] }}" alt="{{ $product->title }}" class="product-card__img" data-role="primary"
                      @if ($eager) fetchpriority="high" @else loading="lazy" decoding="async" @endif>
                 @if ($secondImage)
                     {{-- A second product photo, shown only on hover, gives a
                          quick alternate angle without leaving the grid. --}}
-                    <img src="{{ $secondImage }}" alt="" class="product-card__img product-card__img--hover" loading="lazy" decoding="async">
+                    <img src="{{ $secondImage }}" alt="{{ $product->title }}" class="product-card__img product-card__img--hover" loading="lazy" decoding="async">
                 @endif
             @else
                 <div class="ph-icon-wrap"><i class="bi bi-box-seam" aria-hidden="true"></i></div>

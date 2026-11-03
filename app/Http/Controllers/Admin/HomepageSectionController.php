@@ -5,12 +5,15 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\HomepageSection;
 use App\Models\HomepageSectionItem;
+use App\Services\Images\ImageOptimizer;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 class HomepageSectionController extends Controller
 {
+    public function __construct(private readonly ImageOptimizer $imageOptimizer) {}
+
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
@@ -74,7 +77,7 @@ class HomepageSectionController extends Controller
         $validated = $this->validateItem($request, isUpdate: false);
 
         if ($request->hasFile('image')) {
-            $validated['image_path'] = $request->file('image')->store('homepage-sections', 'public');
+            $validated['image_path'] = $this->imageOptimizer->store($request->file('image'), 'homepage-sections');
         }
 
         unset($validated['image']);
@@ -95,7 +98,7 @@ class HomepageSectionController extends Controller
             if ($homepageSectionItem->image_path) {
                 Storage::disk('public')->delete($homepageSectionItem->image_path);
             }
-            $validated['image_path'] = $request->file('image')->store('homepage-sections', 'public');
+            $validated['image_path'] = $this->imageOptimizer->store($request->file('image'), 'homepage-sections');
         }
 
         unset($validated['image']);

@@ -42,7 +42,7 @@
                 <video src="{{ asset('storage/'.$slide->media_path) }}"
                        autoplay muted loop playsinline aria-hidden="true"></video>
               @else
-                <img src="{{ asset('storage/'.$slide->media_path) }}" alt=""
+                <img src="{{ asset('storage/'.$slide->media_path) }}" alt="{{ $slide->headline ?: $slide->cta_label ?: $storeName }}"
                      @if ($loop->index < 2) fetchpriority="high" @else loading="lazy" decoding="async" @endif>
               @endif
             @else
@@ -95,7 +95,7 @@
                 <a href="{{ $item->link_url ?: route('products.index') }}" class="homepage-section-item">
                   <span class="homepage-section-item-media">
                     @if ($item->image_path)
-                      <img src="{{ asset('storage/'.$item->image_path) }}" alt="" loading="lazy" decoding="async">
+                      <img src="{{ asset('storage/'.$item->image_path) }}" alt="{{ $item->label }}" loading="lazy" decoding="async">
                     @else
                       <span class="ph-icon-wrap ph-icon-sm" aria-hidden="true"><i class="bi bi-bag-heart"></i></span>
                     @endif

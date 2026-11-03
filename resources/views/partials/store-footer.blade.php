@@ -2,7 +2,6 @@
     $storeName = config('store.name');
     $supportEmail = config('store.contact.email');
     $freeShippingThreshold = config('store.free_shipping_threshold');
-    $returnWindow = config('store.return_window_days');
     $socialProfiles = collect(config('store.social', []))
         ->map(fn (string $url, string $network) => [
             'url' => $url,
@@ -42,7 +41,7 @@
     <div class="footer-trust-row row g-3">
       <div class="col-6 col-md-3"><div class="trust-item"><i class="bi bi-truck" aria-hidden="true"></i> Free shipping over ${{ $freeShippingThreshold }}</div></div>
       <div class="col-6 col-md-3"><div class="trust-item"><i class="bi bi-shield-check" aria-hidden="true"></i> Secure checkout</div></div>
-      <div class="col-6 col-md-3"><div class="trust-item"><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i> {{ $returnWindow }}-day returns</div></div>
+      <div class="col-6 col-md-3"><div class="trust-item"><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i> Quality Finds</div></div>
       <div class="col-6 col-md-3"><div class="trust-item"><i class="bi bi-headset" aria-hidden="true"></i> Dedicated support</div></div>
     </div>
 

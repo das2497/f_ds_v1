@@ -27,6 +27,15 @@
     $reviews = $product->reviews;
     $reviewsCount = $reviews->count();
     $averageRating = $reviewsCount ? $reviews->avg('rating') : null;
+    $ratingBreakdown = collect([5, 4, 3, 2, 1])->map(function ($star) use ($reviews, $reviewsCount) {
+        $count = $reviews->where('rating', $star)->count();
+
+        return [
+            'star' => $star,
+            'count' => $count,
+            'percent' => $reviewsCount ? round($count / $reviewsCount * 100) : 0,
+        ];
+    });
     $canReview = $product->isPurchasedBy(auth()->user());
     $hasReviewed = auth()->check() && $reviews->contains('user_id', auth()->id());
 
@@ -84,7 +93,7 @@
                   data-gallery-thumb data-image="{{ $image }}"
                   aria-label="Show image {{ $loop->iteration }} of {{ $images->count() }}"
                   aria-pressed="{{ $loop->first ? 'true' : 'false' }}">
-            <img src="{{ $image }}" alt="" loading="lazy" decoding="async">
+            <img src="{{ $image }}" alt="{{ $product->title }} — view {{ $loop->iteration }}" loading="lazy" decoding="async">
           </button>
         @endforeach
       </div>
@@ -234,18 +243,31 @@
   <section class="mt-5" aria-labelledby="product-reviews" style="max-width:700px">
     <h2 id="product-reviews" class="h5 mb-3">Customer Reviews</h2>
 
-    <div class="d-flex align-items-center gap-2 mb-4">
-      <div class="star-rating-display fs-4" aria-hidden="true">
-        @for ($i = 1; $i <= 5; $i++)
-          <i class="bi {{ $averageRating && $i <= round($averageRating) ? 'bi-star-fill' : 'bi-star' }}"></i>
-        @endfor
+    <div class="row g-4 align-items-center mb-4">
+      <div class="col-12 col-sm-4">
+        <div class="display-5 fw-bold lh-1">{{ $reviewsCount ? number_format($averageRating, 1) : '—' }}</div>
+        <div class="star-rating-display fs-5 my-1" aria-hidden="true">
+          @for ($i = 1; $i <= 5; $i++)
+            <i class="bi {{ $averageRating && $i <= round($averageRating) ? 'bi-star-fill' : 'bi-star' }}"></i>
+          @endfor
+        </div>
+        <div class="fw-semibold">
+          {{ $reviewsCount ? number_format($reviewsCount).' Review'.($reviewsCount === 1 ? '' : 's') : 'No reviews yet' }}
+        </div>
       </div>
-      @if ($reviewsCount)
-        <span class="fw-semibold">{{ number_format($averageRating, 1) }}</span>
-        <span class="text-muted-slate small">({{ $reviewsCount }} review{{ $reviewsCount === 1 ? '' : 's' }})</span>
-      @else
-        <span class="text-muted-slate small">No reviews yet</span>
-      @endif
+      <div class="col-12 col-sm-8">
+        @foreach ($ratingBreakdown as $row)
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <span class="d-inline-flex align-items-center gap-1 small" style="width:2.25rem">
+              <i class="bi bi-star-fill star-rating-display" aria-hidden="true"></i>{{ $row['star'] }}
+            </span>
+            <div class="rating-bar-track flex-grow-1" role="img" aria-label="{{ $row['count'] }} {{ $row['star'] }}-star review{{ $row['count'] === 1 ? '' : 's' }}">
+              <div class="rating-bar-fill" style="width: {{ $row['percent'] }}%"></div>
+            </div>
+            <span class="small text-muted-slate text-end" style="width:2.25rem">{{ number_format($row['count']) }}</span>
+          </div>
+        @endforeach
+      </div>
     </div>
 
     @forelse ($reviews as $review)

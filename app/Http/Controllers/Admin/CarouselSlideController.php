@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\AppSetting;
 use App\Models\CarouselSlide;
 use App\Models\HomepageSection;
+use App\Services\Images\ImageOptimizer;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -13,6 +14,8 @@ use Illuminate\View\View;
 
 class CarouselSlideController extends Controller
 {
+    public function __construct(private readonly ImageOptimizer $imageOptimizer) {}
+
     public function index(): View
     {
         $slides = CarouselSlide::orderBy('sort_order')->get();
@@ -56,7 +59,7 @@ class CarouselSlideController extends Controller
         $validated = $this->validateSlide($request, isUpdate: false);
 
         if ($request->hasFile('media')) {
-            $validated['media_path'] = $request->file('media')->store('carousel', 'public');
+            $validated['media_path'] = $this->storeMedia($request, $validated['media_type']);
         }
 
         unset($validated['media']);
@@ -76,7 +79,7 @@ class CarouselSlideController extends Controller
             if ($carousel->media_path) {
                 Storage::disk('public')->delete($carousel->media_path);
             }
-            $validated['media_path'] = $request->file('media')->store('carousel', 'public');
+            $validated['media_path'] = $this->storeMedia($request, $validated['media_type']);
         }
 
         unset($validated['media']);
@@ -112,6 +115,13 @@ class CarouselSlideController extends Controller
         }
 
         return back();
+    }
+
+    private function storeMedia(Request $request, string $mediaType): string
+    {
+        return $mediaType === 'image'
+            ? $this->imageOptimizer->store($request->file('media'), 'carousel')
+            : $request->file('media')->store('carousel', 'public');
     }
 
     /**

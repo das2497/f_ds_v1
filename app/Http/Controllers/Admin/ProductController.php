@@ -10,6 +10,7 @@ use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\VendorProductCandidate;
 use App\Services\Html\DescriptionSanitizer;
+use App\Services\Images\ImageOptimizer;
 use App\Services\Vendor\PrintfulService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -24,7 +25,10 @@ class ProductController extends Controller
 {
     private const MAX_VIDEO_KB = 20480;
 
-    public function __construct(private readonly PrintfulService $printful) {}
+    public function __construct(
+        private readonly PrintfulService $printful,
+        private readonly ImageOptimizer $imageOptimizer,
+    ) {}
 
     public function index(Request $request): View
     {
@@ -519,7 +523,7 @@ class ProductController extends Controller
     private function resolveVariantImage(Request $request, string $fileKey, ?string $fallbackUrl): ?string
     {
         if ($request->hasFile($fileKey)) {
-            return Storage::disk('public')->url($request->file($fileKey)->store('products/variants', 'public'));
+            return Storage::disk('public')->url($this->imageOptimizer->store($request->file($fileKey), 'products/variants'));
         }
 
         return $fallbackUrl ?: null;
@@ -535,7 +539,7 @@ class ProductController extends Controller
         $imageUrls = array_values($selectedUrls);
 
         foreach ($uploadedFiles as $file) {
-            $imageUrls[] = Storage::disk('public')->url($file->store('products', 'public'));
+            $imageUrls[] = Storage::disk('public')->url($this->imageOptimizer->store($file, 'products'));
         }
 
         return $imageUrls;
