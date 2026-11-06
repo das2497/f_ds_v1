@@ -1198,7 +1198,11 @@ body {
   margin: 0;
   padding: 0;
   gap: 0.1rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
+.mega-nav__list::-webkit-scrollbar { display: none; }
 .mega-nav__item { position: relative; }
 .mega-nav__link {
   display: block;
@@ -1226,9 +1230,11 @@ body {
 
 .mega-nav__panel {
   display: none;
-  position: absolute;
-  top: 100%;
-  left: 0;
+  /* fixed, not absolute: .mega-nav__list scrolls horizontally now, and an
+     absolutely-positioned descendant of a scroll container gets clipped by
+     its overflow-y (which the overflow-x: auto above forces to auto).
+     Position is set in JS (main.js) on hover instead of top/left here. */
+  position: fixed;
   background: #fff;
   border: 1px solid var(--color-border);
   border-top: 2px solid var(--color-accent);

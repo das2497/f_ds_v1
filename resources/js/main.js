@@ -67,6 +67,32 @@ document.addEventListener("DOMContentLoaded", function () {
     window.addEventListener("resize", syncArrows);
   });
 
+  // Desktop category mega-nav — the link row scrolls horizontally (see
+  // theme.css), so dropdown panels are position: fixed and placed here
+  // instead of relying on CSS top/left relative to the scrolled item.
+  var megaNavList = document.querySelector(".mega-nav__list");
+  if (megaNavList) {
+    megaNavList.querySelectorAll(".mega-nav__item").forEach(function (item) {
+      var panel = item.querySelector(".mega-nav__panel");
+      if (!panel) return;
+      item.addEventListener("mouseenter", function () {
+        var rect = item.getBoundingClientRect();
+        var maxLeft = window.innerWidth - panel.offsetWidth - 16;
+        panel.style.top = rect.bottom + "px";
+        panel.style.left = Math.max(16, Math.min(rect.left, maxLeft)) + "px";
+      });
+    });
+
+    // Let a vertical mouse wheel scroll the row horizontally, same as the
+    // category carousel above, so desktop mouse users (not just trackpad/
+    // touch) can reach categories past the edge.
+    megaNavList.addEventListener("wheel", function (e) {
+      if (e.deltaY === 0 || megaNavList.scrollWidth <= megaNavList.clientWidth) return;
+      e.preventDefault();
+      megaNavList.scrollLeft += e.deltaY;
+    }, { passive: false });
+  }
+
   // Back-to-top button
   var backToTop = document.querySelector("[data-action='back-to-top']");
   if (backToTop) {
