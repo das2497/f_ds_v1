@@ -183,10 +183,10 @@
                         </a>
                         <div class="d-flex align-items-center flex-wrap gap-1 mb-2">
                             @if ($item['variant_count'] > 0)
-                                <span class="badge rounded-pill bg-light text-muted-slate border">{{ $item['variant_count'] }} {{ Str::plural('variant', $item['variant_count']) }}</span>
+                                <span class="badge rounded-pill bg-light text-dark border">{{ $item['variant_count'] }} {{ Str::plural('variant', $item['variant_count']) }}</span>
                             @endif
                             @if (! empty($item['category_hint']))
-                                <span class="badge rounded-pill bg-light text-muted-slate border">{{ $item['category_hint'] }}</span>
+                                <span class="badge rounded-pill bg-light text-dark border">{{ $item['category_hint'] }}</span>
                             @endif
                         </div>
                         <div class="mt-auto">

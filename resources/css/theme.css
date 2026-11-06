@@ -1971,6 +1971,33 @@ html[data-theme="dark"] .admin-body .text-dark:not(.bg-light) {
   color: var(--color-text) !important;
 }
 
+/* Bootstrap bakes .btn-outline-secondary's colors into its own --bs-btn-*
+   custom properties per component (not derived from --bs-secondary), so the
+   --bs-* remapping above doesn't reach it — these stayed Bootstrap's fixed
+   #6c757d gray on the dark surface, reading as low-contrast/washed-out. */
+html[data-theme="dark"] .admin-body .btn-outline-secondary {
+  --bs-btn-color: var(--color-text-muted);
+  --bs-btn-border-color: var(--color-text-muted);
+  --bs-btn-hover-color: var(--color-bg);
+  --bs-btn-hover-bg: var(--color-text-muted);
+  --bs-btn-hover-border-color: var(--color-text-muted);
+  --bs-btn-active-color: var(--color-bg);
+  --bs-btn-active-bg: var(--color-text-muted);
+  --bs-btn-active-border-color: var(--color-text-muted);
+  --bs-btn-disabled-color: var(--color-text-muted);
+  --bs-btn-disabled-border-color: var(--color-text-muted);
+}
+
+/* Same baked-in-custom-property issue as .btn-outline-secondary above:
+   disabled pagination links kept Bootstrap's fixed light gray bg while the
+   text correctly picked up the dark-mode muted color, so "Previous"/"…"
+   read as barely-visible light text on an almost-as-light background. */
+html[data-theme="dark"] .admin-body .pagination {
+  --bs-pagination-disabled-bg: var(--color-surface);
+  --bs-pagination-disabled-color: var(--color-text-muted);
+  --bs-pagination-disabled-border-color: var(--color-border);
+}
+
 /* ==========================================================================
    Accessibility & storefront UX
    ========================================================================== */

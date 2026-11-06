@@ -14,7 +14,7 @@
         </div>
     @endif
 
-    <div class="card-surface p-3 mb-3 d-flex flex-row align-items-center gap-2" style="background:#F1F5F9;border-color:#E2E8F0">
+    <div class="card-surface p-3 mb-3 d-flex flex-row align-items-center gap-2">
         <i class="bi bi-pencil-square fs-5 text-muted-slate"></i>
         <div class="small text-muted-slate">
             Not sourced from Printful or CJ Dropshipping — you supply every field, and this product is never auto-routed to a vendor for fulfillment. You're responsible for stocking and shipping it yourself.
