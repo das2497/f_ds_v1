@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\AnalyticsEvent;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class AnalyticsUtmController extends Controller
@@ -43,6 +44,10 @@ class AnalyticsUtmController extends Controller
             'Add to Cart' => $addToCarts,
             'Purchase' => $purchases,
         ];
+
+        // Shared hosting caps sort_buffer_size too low for this GROUP BY + COUNT(DISTINCT) query
+        // once analytics_events grows; raise it for this connection only (no SUPER privilege needed).
+        DB::statement('SET SESSION sort_buffer_size = 4194304');
 
         $campaignPerformance = (clone $current)
             ->selectRaw("
