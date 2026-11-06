@@ -82,15 +82,6 @@ document.addEventListener("DOMContentLoaded", function () {
         panel.style.left = Math.max(16, Math.min(rect.left, maxLeft)) + "px";
       });
     });
-
-    // Let a vertical mouse wheel scroll the row horizontally, same as the
-    // category carousel above, so desktop mouse users (not just trackpad/
-    // touch) can reach categories past the edge.
-    megaNavList.addEventListener("wheel", function (e) {
-      if (e.deltaY === 0 || megaNavList.scrollWidth <= megaNavList.clientWidth) return;
-      e.preventDefault();
-      megaNavList.scrollLeft += e.deltaY;
-    }, { passive: false });
   }
 
   // Back-to-top button

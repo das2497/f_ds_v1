@@ -19,7 +19,7 @@
     "src": "node_modules/bootstrap-icons/font/fonts/bootstrap-icons.woff2"
   },
   "resources/css/app.css": {
-    "file": "assets/app-DuSGkwXz.css",
+    "file": "assets/app-DmwaZQ-m.css",
     "name": "app",
     "names": [
       "app.css"
@@ -44,7 +44,7 @@
     "isEntry": true
   },
   "resources/js/app.js": {
-    "file": "assets/app-DoF-ndyM.js",
+    "file": "assets/app-DvzBxQdm.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true

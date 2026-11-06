@@ -1192,6 +1192,9 @@ body {
   position: relative;
   z-index: 1025;
 }
+.mega-nav-carousel {
+  position: relative;
+}
 .mega-nav__list {
   list-style: none;
   display: flex;
@@ -1204,6 +1207,47 @@ body {
 }
 .mega-nav__list::-webkit-scrollbar { display: none; }
 .mega-nav__item { position: relative; }
+
+/* Side arrows, same prev/next/has-overflow JS as the homepage category
+   carousel (see main.js) — shown only once the list actually overflows. */
+.mega-nav-arrow {
+  display: none;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 3;
+  width: 32px;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: #fff;
+  color: var(--color-text);
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: opacity 0.2s ease, color 0.15s ease;
+}
+.mega-nav-carousel.has-overflow .mega-nav-arrow {
+  display: flex;
+}
+.mega-nav-carousel.has-overflow .mega-nav__list {
+  padding-left: 32px;
+  padding-right: 32px;
+}
+.mega-nav-arrow:hover:not(:disabled) {
+  color: var(--color-accent);
+}
+.mega-nav-arrow:disabled {
+  opacity: 0;
+  pointer-events: none;
+}
+.mega-nav-arrow-prev {
+  left: 0;
+  box-shadow: 8px 0 10px -6px rgba(17, 24, 39, 0.18);
+}
+.mega-nav-arrow-next {
+  right: 0;
+  box-shadow: -8px 0 10px -6px rgba(17, 24, 39, 0.18);
+}
 .mega-nav__link {
   display: block;
   padding: 0.8rem 1rem;
