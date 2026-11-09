@@ -72,10 +72,10 @@
 
                 <div class="table-admin p-4 mb-3">
                     <h6 class="mb-3">Variants</h6>
-                    <p class="small text-muted-slate">Edit details, replace images, or untick "Active" to stop selling a variant without deleting it.</p>
+                    <p class="small text-muted-slate">Edit details, replace images, or untick "Active" to stop selling a variant without deleting it. Leave "Price" blank to use the shop's retail price above for that variant.</p>
                     <div class="table-responsive">
                         <table class="table table-admin align-middle mb-0">
-                            <thead><tr><th>Active</th><th>Image</th><th>Variant</th><th>Color</th><th>Size</th><th>Internal SKU</th><th>Weight (lb)</th><th>Cost</th>@if ($product->source_vendor === 'printful')<th>Design</th>@endif</tr></thead>
+                            <thead><tr><th>Active</th><th>Image</th><th>Variant</th><th>Color</th><th>Size</th><th>Internal SKU</th><th>Weight (lb)</th><th>Cost</th><th>Price</th>@if ($product->source_vendor === 'printful')<th>Design</th>@endif</tr></thead>
                             <tbody>
                                 @foreach ($product->variants as $variant)
                                     <tr>
@@ -96,6 +96,12 @@
                                         <td><input type="text" name="existing_variants[{{ $variant->id }}][sku]" class="form-control form-control-sm" value="{{ $variant->sku }}" style="width:160px" required></td>
                                         <td><input type="number" step="0.01" min="0" name="existing_variants[{{ $variant->id }}][weight_lb]" class="form-control form-control-sm" value="{{ $variant->weight_lb }}" style="width:80px"></td>
                                         <td class="small text-muted-slate">${{ number_format($variant->cost_price, 2) }}</td>
+                                        <td>
+                                            <div class="input-group input-group-sm" style="width:120px">
+                                                <span class="input-group-text">$</span>
+                                                <input type="number" step="0.01" min="0" name="existing_variants[{{ $variant->id }}][price]" class="form-control form-control-sm" value="{{ $variant->price }}" placeholder="{{ number_format($product->price, 2) }}">
+                                            </div>
+                                        </td>
                                         @if ($product->source_vendor === 'printful')
                                             <td>
                                                 <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#designModal-variant-{{ $variant->id }}"><i class="bi bi-brush"></i> Design</button>
@@ -153,7 +159,7 @@
                         <p class="small text-muted-slate">More variants are available from {{ $product->source_vendor === 'cj' ? 'CJ Dropshipping' : 'Printful' }} for this product. Tick the ones you want to start selling.</p>
                         <div class="table-responsive">
                             <table class="table table-admin align-middle mb-0">
-                                <thead><tr><th>Add</th><th>Image</th><th>Variant</th><th>Color</th><th>Size</th><th>Vendor SKU</th><th>Internal SKU</th><th>Weight (lb)</th></tr></thead>
+                                <thead><tr><th>Add</th><th>Image</th><th>Variant</th><th>Color</th><th>Size</th><th>Vendor SKU</th><th>Internal SKU</th><th>Weight (lb)</th><th>Price</th></tr></thead>
                                 <tbody>
                                     @foreach ($availableVendorVariants as $i => $variant)
                                         <tr>
@@ -173,6 +179,12 @@
                                             </td>
                                             <td><input type="text" name="new_variants[{{ $i }}][sku]" class="form-control form-control-sm" placeholder="SHB-..." style="width:160px"></td>
                                             <td><input type="number" step="0.01" min="0" name="new_variants[{{ $i }}][weight_lb]" class="form-control form-control-sm" value="{{ $variant['weight_lb'] }}" style="width:80px"></td>
+                                            <td>
+                                                <div class="input-group input-group-sm" style="width:120px">
+                                                    <span class="input-group-text">$</span>
+                                                    <input type="number" step="0.01" min="0" name="new_variants[{{ $i }}][price]" class="form-control form-control-sm" placeholder="{{ number_format($product->price, 2) }}">
+                                                </div>
+                                            </td>
                                         </tr>
                                     @endforeach
                                 </tbody>

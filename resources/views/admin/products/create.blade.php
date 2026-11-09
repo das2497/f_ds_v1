@@ -114,7 +114,7 @@
 
                 <div class="table-admin p-4">
                     <h6 class="mb-3"><i class="bi bi-grid-3x3-gap me-2 text-muted-slate"></i>Variants &amp; SKU Mapping</h6>
-                    <p class="small text-muted-slate">Variants below were imported from the vendor. Pick only the ones you want to sell, edit their details, and optionally replace each variant's image.</p>
+                    <p class="small text-muted-slate">Variants below were imported from the vendor. Pick only the ones you want to sell, edit their details, and optionally replace each variant's image. Leave "Price" blank to use the retail price above for that variant.</p>
                     <div class="d-flex align-items-center gap-3 mb-2">
                         <button type="button" class="btn btn-sm btn-outline-secondary" id="selectAllVariants">Select All</button>
                         <button type="button" class="btn btn-sm btn-outline-secondary" id="selectNoneVariants">Select None</button>
@@ -122,7 +122,7 @@
                     </div>
                     <div class="table-responsive">
                         <table class="table table-admin align-middle mb-0">
-                            <thead><tr><th>List</th><th>Image</th><th>Variant</th><th>Color</th><th>Size</th><th>Vendor SKU</th><th>Internal SKU</th><th>Weight (lb)</th><th>Stock</th>@if ($candidate->vendor === 'printful')<th>Design</th>@endif</tr></thead>
+                            <thead><tr><th>List</th><th>Image</th><th>Variant</th><th>Color</th><th>Size</th><th>Vendor SKU</th><th>Internal SKU</th><th>Weight (lb)</th><th>Price</th><th>Stock</th>@if ($candidate->vendor === 'printful')<th>Design</th>@endif</tr></thead>
                             <tbody>
                                 @forelse ($variants as $i => $variant)
                                     <tr>
@@ -153,6 +153,12 @@
                                             <input type="number" step="0.01" min="0" name="variants[{{ $i }}][weight_lb]" class="form-control form-control-sm" value="{{ $variant['weight_lb'] }}" style="width:80px">
                                         </td>
                                         <td>
+                                            <div class="input-group input-group-sm" style="width:120px">
+                                                <span class="input-group-text">$</span>
+                                                <input type="number" step="0.01" min="0" name="variants[{{ $i }}][price]" class="form-control form-control-sm" placeholder="{{ number_format($suggestedPrice, 2) }}">
+                                            </div>
+                                        </td>
+                                        <td>
                                             @if (array_key_exists('in_stock', $variant))
                                                 @if ($variant['in_stock'])
                                                     <span class="badge-status-paid">{{ ! empty($variant['stock_qty']) ? number_format($variant['stock_qty']) : 'In Stock' }}</span>
@@ -175,7 +181,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="{{ $candidate->vendor === 'printful' ? 10 : 9 }}" class="text-center text-muted-slate small py-4">No variants were imported for this product.</td>
+                                        <td colspan="{{ $candidate->vendor === 'printful' ? 11 : 10 }}" class="text-center text-muted-slate small py-4">No variants were imported for this product.</td>
                                     </tr>
                                 @endforelse
                             </tbody>

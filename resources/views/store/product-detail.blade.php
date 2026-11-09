@@ -26,11 +26,13 @@
         'size' => $v->size,
         'in_stock' => $v->stock_status !== 'out_of_stock',
         'image' => $v->image,
+        'price' => (float) ($v->price ?? $product->price),
     ])->values();
+    $defaultPrice = (float) ($defaultVariant?->price ?? $product->price);
 
     $images = collect($product->images ?? [])->filter()->values();
-    $isDiscounted = $product->compare_at_price && $product->compare_at_price > $product->price;
-    $percentOff = $isDiscounted ? round((1 - $product->price / $product->compare_at_price) * 100) : null;
+    $isDiscounted = $product->compare_at_price && $product->compare_at_price > $defaultPrice;
+    $percentOff = $isDiscounted ? round((1 - $defaultPrice / $product->compare_at_price) * 100) : null;
     $isWishlisted = auth()->user()?->wishlists()->where('product_id', $product->id)->exists() ?? false;
 
     $reviews = $product->reviews;
@@ -131,16 +133,16 @@
         @endif
       </div>
 
-      <div class="mb-4">
-        <span class="product-card__price-current fs-2">
-          <span class="visually-hidden">Price:</span>${{ number_format($product->price, 2) }}
+      <div class="mb-4" data-price-wrap>
+        <span class="product-card__price-current fs-2" data-current-price>
+          <span class="visually-hidden">Price:</span>${{ number_format($defaultPrice, 2) }}
         </span>
-        @if ($isDiscounted)
+        <span data-compare-price-wrap style="{{ $isDiscounted ? '' : 'display:none' }}">
           <span class="product-card__price-original fs-5 ms-2">
             <span class="visually-hidden">Regular price:</span>${{ number_format($product->compare_at_price, 2) }}
           </span>
-          <span class="badge-sale ms-2">{{ $percentOff }}% OFF</span>
-        @endif
+          <span class="badge-sale ms-2" data-percent-off>{{ $percentOff }}% OFF</span>
+        </span>
       </div>
 
       <div class="d-flex align-items-start gap-3 flex-wrap">
@@ -362,12 +364,30 @@
 <script>
   (function () {
     var variants = @json($variantOptions);
+    var compareAtPrice = @json($product->compare_at_price ? (float) $product->compare_at_price : null);
     var hiddenInput = document.getElementById('selectedVariantId');
     var submitBtn = document.querySelector('#addToCartForm button[type="submit"]');
     var message = document.querySelector('[data-variant-message]');
     var sizeButtons = document.querySelectorAll('[data-swatch-group="size"] .swatch-option');
     var mainImage = document.querySelector('[data-gallery-main]');
+    var currentPriceEl = document.querySelector('[data-current-price]');
+    var comparePriceWrap = document.querySelector('[data-compare-price-wrap]');
+    var percentOffEl = document.querySelector('[data-percent-off]');
     if (!hiddenInput) return;
+
+    // Keeps the displayed price in sync with whichever variant is selected,
+    // falling back to the product's base price for variants without their
+    // own override (see $variantOptions above).
+    function updatePriceForVariant(variant) {
+      if (!variant || !currentPriceEl) return;
+      currentPriceEl.innerHTML = '<span class="visually-hidden">Price:</span>$' + variant.price.toFixed(2);
+
+      var isDiscounted = compareAtPrice !== null && compareAtPrice > variant.price;
+      if (comparePriceWrap) comparePriceWrap.style.display = isDiscounted ? '' : 'none';
+      if (isDiscounted && percentOffEl) {
+        percentOffEl.textContent = Math.round((1 - variant.price / compareAtPrice) * 100) + '% OFF';
+      }
+    }
 
     // Tracked here rather than read back from the DOM, because the .active
     // class is applied by the shared swatch handler in main.js, which may
@@ -395,6 +415,7 @@
         if (submitBtn) submitBtn.disabled = !match.in_stock;
         if (message) message.textContent = match.in_stock ? '' : 'This combination is sold out — try another option.';
         updateGalleryForVariant(match);
+        updatePriceForVariant(match);
       } else {
         if (submitBtn) submitBtn.disabled = true;
         if (message) message.textContent = 'That combination is not available.';

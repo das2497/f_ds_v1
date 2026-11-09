@@ -71,10 +71,10 @@
 
                 <div class="table-admin p-4">
                     <h6 class="mb-3"><i class="bi bi-grid-3x3-gap me-2 text-muted-slate"></i>Variants &amp; SKU</h6>
-                    <p class="small text-muted-slate">Add at least one variant. Your own cost price is what you paid for the stock — used only for your own margin tracking.</p>
+                    <p class="small text-muted-slate">Add at least one variant. Your own cost price is what you paid for the stock — used only for your own margin tracking. Leave "Price" blank to use the retail price above for that variant.</p>
                     <div class="table-responsive">
                         <table class="table table-admin align-middle mb-0">
-                            <thead><tr><th>Image</th><th>Variant</th><th>Color</th><th>Size</th><th>Internal SKU</th><th>Cost</th><th>Weight (lb)</th><th></th></tr></thead>
+                            <thead><tr><th>Image</th><th>Variant</th><th>Color</th><th>Size</th><th>Internal SKU</th><th>Cost</th><th>Price</th><th>Weight (lb)</th><th></th></tr></thead>
                             <tbody id="variantRows"></tbody>
                         </table>
                     </div>
@@ -165,6 +165,7 @@
                     '<td><input type="text" name="variants[' + i + '][size]" class="form-control form-control-sm" style="width:90px"></td>' +
                     '<td><input type="text" name="variants[' + i + '][sku]" class="form-control form-control-sm" placeholder="SHB-..." style="width:160px" required></td>' +
                     '<td><input type="number" step="0.01" min="0" name="variants[' + i + '][cost_price]" class="form-control form-control-sm" style="width:90px" required></td>' +
+                    '<td><div class="input-group input-group-sm" style="width:110px"><span class="input-group-text">$</span><input type="number" step="0.01" min="0" name="variants[' + i + '][price]" class="form-control form-control-sm"></div></td>' +
                     '<td><input type="number" step="0.01" min="0" name="variants[' + i + '][weight_lb]" class="form-control form-control-sm" style="width:80px"></td>' +
                     '<td><button type="button" class="btn-icon btn-icon-danger js-remove-variant" title="Remove"><i class="bi bi-trash3"></i></button></td>';
 
