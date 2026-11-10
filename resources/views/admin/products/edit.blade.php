@@ -201,6 +201,21 @@
                         </div>
                     </div>
                 @endif
+
+                @php
+                    $customVariantStart = max(1000, ($availableVendorVariants->keys()->max() ?? -1) + 1);
+                @endphp
+                <div class="table-admin p-4 mb-3">
+                    <h6 class="mb-3">Add Custom Variant</h6>
+                    <p class="small text-muted-slate">Add a brand-new variant yourself — for products with no more vendor options left, or for manually stocked products.</p>
+                    <div class="table-responsive">
+                        <table class="table table-admin align-middle mb-0">
+                            <thead><tr><th>Image</th><th>Variant</th><th>Color</th><th>Size</th><th>Internal SKU</th><th>Cost</th><th>Price</th><th>Weight (lb)</th><th></th></tr></thead>
+                            <tbody id="customVariantRows"></tbody>
+                        </table>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-secondary mt-2" id="addCustomVariantRow"><i class="bi bi-plus-lg"></i> Add Variant</button>
+                </div>
             </div>
 
             <div class="col-lg-4">
@@ -411,6 +426,46 @@
                     if (modal) modal.hide();
                 });
             });
+        })();
+
+        (function () {
+            var tbody = document.getElementById('customVariantRows');
+            var addButton = document.getElementById('addCustomVariantRow');
+            var rowCount = {{ $customVariantStart }};
+
+            function addRow() {
+                var i = rowCount++;
+                var tr = document.createElement('tr');
+                tr.innerHTML =
+                    '<td>' +
+                        '<img src="https://placehold.co/48x48/F8FAFC/64748B?text=No+Image" class="js-variant-thumb" style="width:44px;height:44px;object-fit:cover;border-radius:6px;border:1px solid var(--color-border)">' +
+                        '<input type="hidden" name="new_variants[' + i + '][add]" value="1">' +
+                        '<input type="file" name="new_variants[' + i + '][image]" accept="image/jpeg,image/png,image/webp" class="form-control form-control-sm mt-1 js-variant-image-input" style="font-size:0.7rem">' +
+                    '</td>' +
+                    '<td><input type="text" name="new_variants[' + i + '][option_label]" class="form-control form-control-sm" placeholder="e.g. Medium / Blue" required></td>' +
+                    '<td><input type="text" name="new_variants[' + i + '][color]" class="form-control form-control-sm" style="width:90px"></td>' +
+                    '<td><input type="text" name="new_variants[' + i + '][size]" class="form-control form-control-sm" style="width:90px"></td>' +
+                    '<td><input type="text" name="new_variants[' + i + '][sku]" class="form-control form-control-sm" placeholder="SHB-..." style="width:160px" required></td>' +
+                    '<td><input type="number" step="0.01" min="0" name="new_variants[' + i + '][cost_price]" class="form-control form-control-sm" style="width:90px" required></td>' +
+                    '<td><div class="input-group input-group-sm" style="width:110px"><span class="input-group-text">$</span><input type="number" step="0.01" min="0" name="new_variants[' + i + '][price]" class="form-control form-control-sm"></div></td>' +
+                    '<td><input type="number" step="0.01" min="0" name="new_variants[' + i + '][weight_lb]" class="form-control form-control-sm" style="width:80px"></td>' +
+                    '<td><button type="button" class="btn-icon btn-icon-danger js-remove-custom-variant" title="Remove"><i class="bi bi-trash3"></i></button></td>';
+
+                tbody.appendChild(tr);
+
+                tr.querySelector('.js-variant-image-input').addEventListener('change', function (e) {
+                    var thumb = tr.querySelector('.js-variant-thumb');
+                    if (e.target.files && e.target.files[0] && thumb) {
+                        thumb.src = URL.createObjectURL(e.target.files[0]);
+                    }
+                });
+
+                tr.querySelector('.js-remove-custom-variant').addEventListener('click', function () {
+                    tr.remove();
+                });
+            }
+
+            addButton.addEventListener('click', addRow);
         })();
     </script>
 </x-admin-layout>
