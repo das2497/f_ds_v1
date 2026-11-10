@@ -87,35 +87,37 @@
 
   <div class="row g-5">
     <div class="col-lg-6">
-      <div class="pdp-gallery-main mb-3">
-        @if ($images->isNotEmpty())
-          <img src="{{ $images->first() }}" alt="{{ $product->title }}" data-gallery-main
-               fetchpriority="high" decoding="async">
-        @else
-          <div class="ph-icon-wrap" style="width:100%;height:100%" role="img" aria-label="No image available for {{ $product->title }}" data-gallery-main>
-            <i class="bi bi-box-seam" aria-hidden="true"></i>
-          </div>
-        @endif
-      </div>
+      <div class="pdp-gallery">
+        <div class="pdp-gallery-thumbs" role="group" aria-label="Product image and video thumbnails">
+          @foreach ($images as $image)
+            <button type="button" class="pdp-gallery-thumb @if ($loop->first) active @endif"
+                    data-gallery-thumb data-type="image" data-image="{{ $image }}"
+                    aria-label="Show image {{ $loop->iteration }} of {{ $images->count() }}"
+                    aria-pressed="{{ $loop->first ? 'true' : 'false' }}">
+              <img src="{{ $image }}" alt="{{ $product->title }} — view {{ $loop->iteration }}" loading="lazy" decoding="async">
+            </button>
+          @endforeach
 
-      <div class="d-flex gap-2 flex-wrap" role="group" aria-label="Product image and video thumbnails">
-        @foreach ($images as $image)
-          <button type="button" class="pdp-gallery-thumb @if ($loop->first) active @endif"
-                  data-gallery-thumb data-type="image" data-image="{{ $image }}"
-                  aria-label="Show image {{ $loop->iteration }} of {{ $images->count() }}"
-                  aria-pressed="{{ $loop->first ? 'true' : 'false' }}">
-            <img src="{{ $image }}" alt="{{ $product->title }} — view {{ $loop->iteration }}" loading="lazy" decoding="async">
-          </button>
-        @endforeach
+          @if ($product->video_path)
+            <button type="button" class="pdp-gallery-thumb pdp-gallery-thumb--video"
+                    data-gallery-thumb data-type="video" data-video="{{ asset('storage/'.$product->video_path) }}"
+                    aria-label="Play product video" aria-pressed="false">
+              <img src="{{ $images->first() }}" alt="Product video thumbnail" loading="lazy" decoding="async">
+              <span class="pdp-gallery-thumb__play" aria-hidden="true"><i class="bi bi-play-fill"></i></span>
+            </button>
+          @endif
+        </div>
 
-        @if ($product->video_path)
-          <button type="button" class="pdp-gallery-thumb pdp-gallery-thumb--video"
-                  data-gallery-thumb data-type="video" data-video="{{ asset('storage/'.$product->video_path) }}"
-                  aria-label="Play product video" aria-pressed="false">
-            <img src="{{ $images->first() }}" alt="Product video thumbnail" loading="lazy" decoding="async">
-            <span class="pdp-gallery-thumb__play" aria-hidden="true"><i class="bi bi-play-fill"></i></span>
-          </button>
-        @endif
+        <div class="pdp-gallery-main">
+          @if ($images->isNotEmpty())
+            <img src="{{ $images->first() }}" alt="{{ $product->title }}" data-gallery-main
+                 fetchpriority="high" decoding="async">
+          @else
+            <div class="ph-icon-wrap" style="width:100%;height:100%" role="img" aria-label="No image available for {{ $product->title }}" data-gallery-main>
+              <i class="bi bi-box-seam" aria-hidden="true"></i>
+            </div>
+          @endif
+        </div>
       </div>
     </div>
 

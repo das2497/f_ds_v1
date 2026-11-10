@@ -628,7 +628,27 @@ body {
 
 /* ---------- Product Detail Page ---------- */
 
+/* Thumbnails run down the left side of the main image (Amazon-style) —
+   .pdp-gallery-thumbs has no explicit height, so it stretches (flex
+   align-items: stretch, the row default) to match .pdp-gallery-main's
+   aspect-ratio-driven height, and scrolls internally once thumbs overflow
+   that height instead of growing the gallery taller. */
+.pdp-gallery {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+}
+.pdp-gallery-thumbs {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 auto;
+  gap: 8px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
 .pdp-gallery-main {
+  flex: 1 1 auto;
+  min-width: 0;
   background: var(--color-bg);
   border-radius: var(--radius-card);
   aspect-ratio: 1 / 1;
@@ -638,6 +658,13 @@ body {
   overflow: hidden;
 }
 .pdp-gallery-main img { max-width: 90%; max-height: 90%; object-fit: contain; }
+
+@media (max-width: 767.98px) {
+  /* Thumbs reflow into a horizontal strip below the main image on narrow
+     screens — a vertical rail there would crowd out the image itself. */
+  .pdp-gallery { flex-direction: column-reverse; }
+  .pdp-gallery-thumbs { flex-direction: row; flex-wrap: wrap; overflow-y: visible; overflow-x: auto; }
+}
 
 .pdp-gallery-thumb {
   width: 68px;
