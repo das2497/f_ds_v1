@@ -388,6 +388,7 @@ class ProductController extends Controller
             'existing_variants.*.color' => ['nullable', 'string', 'max:100'],
             'existing_variants.*.size' => ['nullable', 'string', 'max:100'],
             'existing_variants.*.sku' => ['required', 'string', 'max:100'],
+            'existing_variants.*.cost_price' => ['nullable', 'numeric', 'min:0'],
             'existing_variants.*.price' => ['nullable', 'numeric', 'min:0'],
             'existing_variants.*.weight_lb' => ['nullable', 'numeric', 'min:0'],
             'existing_variants.*.is_active' => ['nullable', 'boolean'],
@@ -449,6 +450,7 @@ class ProductController extends Controller
                     'color' => $data['color'] ?? null,
                     'size' => $data['size'] ?? null,
                     'sku' => $data['sku'],
+                    'cost_price' => $data['cost_price'] ?? $variant->cost_price,
                     'price' => $data['price'] ?? null,
                     'weight_lb' => $data['weight_lb'] ?? null,
                     // A freshly picked vendor image (from the "Choose Vendor

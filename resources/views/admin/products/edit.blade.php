@@ -95,7 +95,16 @@
                                         <td><input type="text" name="existing_variants[{{ $variant->id }}][size]" class="form-control form-control-sm" value="{{ $variant->size }}" style="width:90px"></td>
                                         <td><input type="text" name="existing_variants[{{ $variant->id }}][sku]" class="form-control form-control-sm" value="{{ $variant->sku }}" style="width:160px" required></td>
                                         <td><input type="number" step="0.01" min="0" name="existing_variants[{{ $variant->id }}][weight_lb]" class="form-control form-control-sm" value="{{ $variant->weight_lb }}" style="width:80px"></td>
-                                        <td class="small text-muted-slate">${{ number_format($variant->cost_price, 2) }}</td>
+                                        <td>
+                                            @if ($product->source_vendor === 'manual')
+                                                <div class="input-group input-group-sm" style="width:110px">
+                                                    <span class="input-group-text">$</span>
+                                                    <input type="number" step="0.01" min="0" name="existing_variants[{{ $variant->id }}][cost_price]" class="form-control form-control-sm" value="{{ $variant->cost_price }}" required>
+                                                </div>
+                                            @else
+                                                <span class="small text-muted-slate">${{ number_format($variant->cost_price, 2) }}</span>
+                                            @endif
+                                        </td>
                                         <td>
                                             <div class="input-group input-group-sm" style="width:120px">
                                                 <span class="input-group-text">$</span>

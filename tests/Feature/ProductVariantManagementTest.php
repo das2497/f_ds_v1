@@ -154,6 +154,83 @@ class ProductVariantManagementTest extends TestCase
         $this->assertStringContainsString('/storage/products/variants/', $variant->image);
     }
 
+    public function test_update_can_edit_cost_price_for_a_manual_products_variant(): void
+    {
+        $category = $this->category();
+        $product = Product::create([
+            'source_vendor' => 'manual',
+            'category_id' => $category->id,
+            'title' => 'Washable Dog Bed',
+            'slug' => 'washable-dog-bed',
+            'price' => 42.82,
+            'images' => [],
+            'is_active' => true,
+        ]);
+        $variant = $product->variants()->create([
+            'sku' => 'SHB-BED-1',
+            'option_label' => 'Medium',
+            'size' => 'Medium',
+            'cost_price' => 42.82,
+            'stock_status' => 'in_stock',
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($this->admin())->put(route('admin.products.update', $product), [
+            'title' => 'Washable Dog Bed',
+            'category_id' => $category->id,
+            'price' => 42.82,
+            'existing_variants' => [
+                $variant->id => [
+                    'option_label' => 'Medium',
+                    'size' => 'Medium',
+                    'sku' => 'SHB-BED-1',
+                    'cost_price' => 19.5,
+                ],
+            ],
+        ]);
+
+        $response->assertRedirect();
+
+        $this->assertSame(19.5, (float) $variant->fresh()->cost_price);
+    }
+
+    public function test_update_leaves_a_vendor_products_variant_cost_price_untouched(): void
+    {
+        $category = $this->category();
+        $product = Product::create([
+            'source_vendor' => 'printful',
+            'category_id' => $category->id,
+            'title' => 'Rubber Case for AirPods',
+            'slug' => 'rubber-case-for-airpods',
+            'price' => 25.88,
+            'images' => [],
+            'is_active' => true,
+        ]);
+        $variant = $product->variants()->create([
+            'sku' => 'SHB-CASE-1',
+            'option_label' => 'Black / AirPods Pro',
+            'cost_price' => 10.35,
+            'stock_status' => 'in_stock',
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($this->admin())->put(route('admin.products.update', $product), [
+            'title' => 'Rubber Case for AirPods',
+            'category_id' => $category->id,
+            'price' => 25.88,
+            'existing_variants' => [
+                $variant->id => [
+                    'option_label' => 'Black / AirPods Pro',
+                    'sku' => 'SHB-CASE-1',
+                ],
+            ],
+        ]);
+
+        $response->assertRedirect();
+
+        $this->assertSame(10.35, (float) $variant->fresh()->cost_price);
+    }
+
     public function test_update_can_point_an_existing_variant_at_a_different_picked_vendor_image(): void
     {
         $category = $this->category();
