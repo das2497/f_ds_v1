@@ -138,20 +138,55 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
-  // PDP image gallery — thumbnail click swaps main image. Thumbs are
-  // <button> elements wrapping an <img> so they are keyboard reachable, so
-  // the source comes from data-image rather than the element's own src.
+  // PDP image/video gallery — thumbnail click swaps the main display. Thumbs
+  // are <button> elements wrapping an <img> so they are keyboard reachable,
+  // so the source comes from data-image/data-video rather than the
+  // element's own src. The video thumb swaps the main <img> for a <video>
+  // (and back again) so the video plays inline among the product photos
+  // instead of appearing as a separate block on the page.
   document.querySelectorAll("[data-gallery-thumb]").forEach(function (thumb) {
     thumb.addEventListener("click", function () {
       var main = document.querySelector("[data-gallery-main]");
-      var source = thumb.dataset.image || (thumb.querySelector("img") || {}).src || thumb.src;
-      if (main && main.tagName === "IMG" && source) main.src = source;
+      if (!main) return;
+      var type = thumb.dataset.type || "image";
+
       document.querySelectorAll("[data-gallery-thumb]").forEach(function (t) {
         t.classList.remove("active");
         if (t.hasAttribute("aria-pressed")) t.setAttribute("aria-pressed", "false");
       });
       thumb.classList.add("active");
       if (thumb.hasAttribute("aria-pressed")) thumb.setAttribute("aria-pressed", "true");
+
+      if (type === "video") {
+        var videoSrc = thumb.dataset.video;
+        if (!videoSrc) return;
+        if (main.tagName !== "VIDEO") {
+          var video = document.createElement("video");
+          video.setAttribute("data-gallery-main", "");
+          video.controls = true;
+          video.preload = "metadata";
+          video.setAttribute("aria-label", thumb.getAttribute("aria-label") || "Product video");
+          main.replaceWith(video);
+          main = video;
+        }
+        main.src = videoSrc;
+        main.load();
+        return;
+      }
+
+      var source = thumb.dataset.image || (thumb.querySelector("img") || {}).src || thumb.src;
+      if (!source) return;
+      if (main.tagName !== "IMG") {
+        var img = document.createElement("img");
+        img.setAttribute("data-gallery-main", "");
+        img.setAttribute("fetchpriority", "high");
+        img.decoding = "async";
+        var thumbImg = thumb.querySelector("img");
+        img.alt = thumbImg ? thumbImg.alt : "";
+        main.replaceWith(img);
+        main = img;
+      }
+      main.src = source;
     });
   });
 

@@ -98,22 +98,25 @@
         @endif
       </div>
 
-      <div class="d-flex gap-2 flex-wrap" role="group" aria-label="Product image thumbnails">
+      <div class="d-flex gap-2 flex-wrap" role="group" aria-label="Product image and video thumbnails">
         @foreach ($images as $image)
           <button type="button" class="pdp-gallery-thumb @if ($loop->first) active @endif"
-                  data-gallery-thumb data-image="{{ $image }}"
+                  data-gallery-thumb data-type="image" data-image="{{ $image }}"
                   aria-label="Show image {{ $loop->iteration }} of {{ $images->count() }}"
                   aria-pressed="{{ $loop->first ? 'true' : 'false' }}">
             <img src="{{ $image }}" alt="{{ $product->title }} — view {{ $loop->iteration }}" loading="lazy" decoding="async">
           </button>
         @endforeach
-      </div>
 
-      @if ($product->video_path)
-        <video src="{{ asset('storage/'.$product->video_path) }}" controls preload="metadata"
-               style="width:100%;border-radius:10px" class="mt-3"
-               aria-label="Product video for {{ $product->title }}"></video>
-      @endif
+        @if ($product->video_path)
+          <button type="button" class="pdp-gallery-thumb pdp-gallery-thumb--video"
+                  data-gallery-thumb data-type="video" data-video="{{ asset('storage/'.$product->video_path) }}"
+                  aria-label="Play product video" aria-pressed="false">
+            <img src="{{ $images->first() }}" alt="Product video thumbnail" loading="lazy" decoding="async">
+            <span class="pdp-gallery-thumb__play" aria-hidden="true"><i class="bi bi-play-fill"></i></span>
+          </button>
+        @endif
+      </div>
     </div>
 
     <div class="col-lg-6">
