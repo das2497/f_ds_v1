@@ -808,6 +808,17 @@ body {
 }
 .rich-text-editor__btn:hover { background: var(--color-surface); border-color: var(--color-border); color: var(--color-heading); }
 .rich-text-editor__divider { width: 1px; background: var(--color-border); margin: 3px 4px; }
+.rich-text-editor__select {
+  height: 30px;
+  padding: 0 6px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+.rich-text-editor__select:hover { background: var(--color-surface); border-color: var(--color-border); color: var(--color-heading); }
 .rich-text-editor__surface {
   padding: 0.6rem 0.9rem;
   font-size: 0.9rem;
@@ -822,6 +833,8 @@ body {
 }
 .rich-text-editor__surface p { margin: 0 0 0.6rem; }
 .rich-text-editor__surface ul, .rich-text-editor__surface ol { margin: 0 0 0.6rem; padding-left: 1.25rem; }
+.rich-text-editor__surface li { margin-bottom: 6px; }
+.rich-text-editor__surface li:last-child { margin-bottom: 0; }
 .rich-text-editor__surface h3, .rich-text-editor__surface h4, .rich-text-editor__surface h5 { font-size: 1rem; font-weight: 700; margin: 0.5rem 0; }
 .rich-text-editor__surface > *:last-child { margin-bottom: 0; }
 

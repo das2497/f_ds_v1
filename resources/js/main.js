@@ -281,6 +281,46 @@ document.addEventListener("DOMContentLoaded", function () {
         sync();
       });
     });
+
+    // Bullet/numbered list line spacing: applies to the list the cursor is
+    // in (or every list in the editor, if nothing is selected inside one),
+    // storing the choice as inline styles so it's kept with the saved HTML.
+    var spacingSelect = wrap.querySelector("[data-rte-line-spacing]");
+    if (spacingSelect) {
+      spacingSelect.addEventListener("change", function () {
+        var value = spacingSelect.value;
+        if (!value) return;
+        var parts = value.split("|");
+        var lineHeight = parts[0];
+        var gap = parts[1] + "px";
+
+        var lists = [];
+        var selection = window.getSelection();
+        var node = selection && selection.rangeCount ? selection.getRangeAt(0).commonAncestorContainer : null;
+        while (node && node !== surface) {
+          if (node.nodeType === 1 && (node.tagName === "UL" || node.tagName === "OL")) {
+            lists.push(node);
+            break;
+          }
+          node = node.parentNode;
+        }
+        if (!lists.length) {
+          lists = Array.prototype.slice.call(surface.querySelectorAll("ul, ol"));
+        }
+
+        lists.forEach(function (list) {
+          list.style.lineHeight = lineHeight;
+          Array.prototype.forEach.call(list.children, function (li) {
+            if (li.tagName === "LI") {
+              li.style.marginBottom = gap;
+            }
+          });
+        });
+
+        sync();
+        spacingSelect.selectedIndex = 0;
+      });
+    }
   });
 
   // Simple countdown for deal timers ([data-countdown="HH:MM:SS"])

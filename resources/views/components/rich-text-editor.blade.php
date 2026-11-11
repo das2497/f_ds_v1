@@ -12,6 +12,13 @@
         <span class="rich-text-editor__divider"></span>
         <button type="button" class="rich-text-editor__btn" data-rte-command="insertUnorderedList" title="Bullet list"><i class="bi bi-list-ul"></i></button>
         <button type="button" class="rich-text-editor__btn" data-rte-command="insertOrderedList" title="Numbered list"><i class="bi bi-list-ol"></i></button>
+        <select class="rich-text-editor__select" data-rte-line-spacing title="Bullet/list line spacing">
+            <option value="">List spacing</option>
+            <option value="1.3|2">Compact</option>
+            <option value="1.5|6" selected>Normal</option>
+            <option value="1.7|10">Relaxed</option>
+            <option value="2|16">Loose</option>
+        </select>
         <span class="rich-text-editor__divider"></span>
         <button type="button" class="rich-text-editor__btn" data-rte-command="formatBlock" data-rte-value="h3" title="Heading"><i class="bi bi-type-h3"></i></button>
         <button type="button" class="rich-text-editor__btn" data-rte-command="formatBlock" data-rte-value="p" title="Paragraph text"><i class="bi bi-paragraph"></i></button>
