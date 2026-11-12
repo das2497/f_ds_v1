@@ -59,6 +59,14 @@ class User extends Authenticatable
      */
     public function homeRouteName(): string
     {
-        return $this->hasAnyRole(['admin', 'super-admin']) ? 'admin.dashboard' : 'account.dashboard';
+        if ($this->hasAnyRole(['admin', 'super-admin'])) {
+            return 'admin.dashboard';
+        }
+
+        if ($this->hasRole('employee')) {
+            return 'admin.products';
+        }
+
+        return 'account.dashboard';
     }
 }

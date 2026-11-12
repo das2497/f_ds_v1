@@ -64,20 +64,22 @@
                         <td class="text-end">
                             <div class="table-actions justify-content-end">
                                 <a href="{{ route('admin.products.edit', $product) }}" class="btn-icon btn-icon-accent" title="Edit"><i class="bi bi-pencil"></i></a>
-                                <form action="{{ route('admin.products.toggle-status', $product) }}" method="POST">
-                                    @csrf
-                                    @method('PUT')
-                                    @if ($product->is_active)
-                                        <button type="submit" class="btn-icon" title="Deactivate"><i class="bi bi-pause-circle"></i></button>
-                                    @else
-                                        <button type="submit" class="btn-icon btn-icon-positive" title="Activate"><i class="bi bi-play-circle"></i></button>
-                                    @endif
-                                </form>
-                                <form action="{{ route('admin.products.destroy', $product) }}" method="POST" onsubmit="return confirm('Permanently delete &quot;{{ $product->title }}&quot;? This cannot be undone.');">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn-icon btn-icon-danger" title="Delete"><i class="bi bi-trash3"></i></button>
-                                </form>
+                                @unless (auth()->user()->hasRole('employee') && ! auth()->user()->hasAnyRole(['admin', 'super-admin']))
+                                    <form action="{{ route('admin.products.toggle-status', $product) }}" method="POST">
+                                        @csrf
+                                        @method('PUT')
+                                        @if ($product->is_active)
+                                            <button type="submit" class="btn-icon" title="Deactivate"><i class="bi bi-pause-circle"></i></button>
+                                        @else
+                                            <button type="submit" class="btn-icon btn-icon-positive" title="Activate"><i class="bi bi-play-circle"></i></button>
+                                        @endif
+                                    </form>
+                                    <form action="{{ route('admin.products.destroy', $product) }}" method="POST" onsubmit="return confirm('Permanently delete &quot;{{ $product->title }}&quot;? This cannot be undone.');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn-icon btn-icon-danger" title="Delete"><i class="bi bi-trash3"></i></button>
+                                    </form>
+                                @endunless
                             </div>
                         </td>
                     </tr>

@@ -29,8 +29,10 @@
                         <td>
                             @if ($member->hasRole('super-admin'))
                                 <span class="badge rounded-pill" style="background:#FEE2E2;color:#991B1B">Super Admin</span>
-                            @else
+                            @elseif ($member->hasRole('admin'))
                                 <span class="badge rounded-pill" style="background:#DBEAFE;color:#1E40AF">Admin</span>
+                            @else
+                                <span class="badge rounded-pill" style="background:#F1F5F9;color:#475569">Employee</span>
                             @endif
                         </td>
                         <td class="text-end">
@@ -76,6 +78,7 @@
                             <div class="mb-3">
                                 <label class="form-label small">Role</label>
                                 <select name="role" class="form-select" {{ $member->id === auth()->id() ? 'disabled' : '' }}>
+                                    <option value="employee" {{ $member->hasRole('employee') ? 'selected' : '' }}>Employee</option>
                                     <option value="admin" {{ $member->hasRole('admin') ? 'selected' : '' }}>Admin</option>
                                     <option value="super-admin" {{ $member->hasRole('super-admin') ? 'selected' : '' }}>Super Admin</option>
                                 </select>
@@ -126,6 +129,7 @@
                         <div class="mb-3">
                             <label class="form-label small">Role</label>
                             <select name="role" class="form-select">
+                                <option value="employee">Employee</option>
                                 <option value="admin">Admin</option>
                                 <option value="super-admin">Super Admin</option>
                             </select>

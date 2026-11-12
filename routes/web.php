@@ -94,6 +94,44 @@ Route::middleware('auth')->group(function () {
     Route::post('/products/{product}/reviews', [ReviewController::class, 'store'])->name('reviews.store');
 });
 
+Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin|super-admin|employee'])->group(function () {
+    Route::get('/products', [AdminProductController::class, 'index'])->name('products');
+    Route::get('/products/create-manual', [AdminProductController::class, 'createManual'])->name('products.create-manual');
+    Route::post('/products/manual', [AdminProductController::class, 'storeManual'])->name('products.store-manual');
+    Route::get('/products/create/{candidate}', [AdminProductController::class, 'create'])->name('products.create');
+    Route::post('/products', [AdminProductController::class, 'store'])->name('products.store');
+    Route::get('/products/{product}/edit', [AdminProductController::class, 'edit'])->name('products.edit');
+    Route::put('/products/{product}', [AdminProductController::class, 'update'])->name('products.update');
+
+    Route::post('/product-designs/upload-image', [ProductDesignController::class, 'uploadImage'])->name('product-designs.upload-image');
+    Route::put('/product-candidates/{candidate}/design', [ProductDesignController::class, 'updateCandidate'])->name('candidates.design.update');
+    Route::put('/product-variants/{variant}/design', [ProductDesignController::class, 'updateVariant'])->name('product-variants.design.update');
+
+    Route::get('/products-research-printful', [VendorResearchController::class, 'index'])
+        ->defaults('vendor', 'printful')->name('products-research-printful');
+    Route::get('/products-research-printful/scores', [VendorResearchController::class, 'scores'])
+        ->defaults('vendor', 'printful')->name('products-research-printful.scores');
+    Route::get('/products-research-printful/{externalId}', [VendorResearchController::class, 'show'])
+        ->defaults('vendor', 'printful')->name('products-research-printful.show');
+    Route::post('/products-research-printful/{externalId}/select', [VendorResearchController::class, 'select'])
+        ->defaults('vendor', 'printful')->name('products-research-printful.select');
+    Route::post('/products-research-printful/{externalId}/score', [VendorResearchController::class, 'score'])
+        ->defaults('vendor', 'printful')->name('products-research-printful.score');
+
+    Route::get('/products-research-cjd', [VendorResearchController::class, 'index'])
+        ->defaults('vendor', 'cj')->name('products-research-cjd');
+    Route::get('/products-research-cjd/scores', [VendorResearchController::class, 'scores'])
+        ->defaults('vendor', 'cj')->name('products-research-cjd.scores');
+    Route::get('/products-research-cjd/{externalId}', [VendorResearchController::class, 'show'])
+        ->defaults('vendor', 'cj')->name('products-research-cjd.show');
+    Route::post('/products-research-cjd/{externalId}/select', [VendorResearchController::class, 'select'])
+        ->defaults('vendor', 'cj')->name('products-research-cjd.select');
+    Route::post('/products-research-cjd/{externalId}/score', [VendorResearchController::class, 'score'])
+        ->defaults('vendor', 'cj')->name('products-research-cjd.score');
+
+    Route::get('/products-selected', [SelectedProductController::class, 'index'])->name('products-selected');
+});
+
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin|super-admin'])->group(function () {
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
 
@@ -126,44 +164,11 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin|super-ad
     Route::delete('/homepage-section-items/{homepageSectionItem}', [HomepageSectionController::class, 'destroyItem'])->name('homepage-section-items.destroy');
     Route::post('/homepage-section-items/{homepageSectionItem}/move', [HomepageSectionController::class, 'moveItem'])->name('homepage-section-items.move');
 
-    Route::get('/products', [AdminProductController::class, 'index'])->name('products');
-    Route::get('/products/create-manual', [AdminProductController::class, 'createManual'])->name('products.create-manual');
-    Route::post('/products/manual', [AdminProductController::class, 'storeManual'])->name('products.store-manual');
-    Route::get('/products/create/{candidate}', [AdminProductController::class, 'create'])->name('products.create');
-    Route::post('/products', [AdminProductController::class, 'store'])->name('products.store');
-    Route::get('/products/{product}/edit', [AdminProductController::class, 'edit'])->name('products.edit');
-    Route::put('/products/{product}', [AdminProductController::class, 'update'])->name('products.update');
     Route::put('/products/{product}/toggle-status', [AdminProductController::class, 'toggleStatus'])->name('products.toggle-status');
     Route::delete('/products/{product}', [AdminProductController::class, 'destroy'])->name('products.destroy');
 
     Route::get('/reviews', [AdminReviewController::class, 'index'])->name('reviews');
     Route::delete('/reviews/{review}', [AdminReviewController::class, 'destroy'])->name('reviews.destroy');
-
-    Route::post('/product-designs/upload-image', [ProductDesignController::class, 'uploadImage'])->name('product-designs.upload-image');
-    Route::put('/product-candidates/{candidate}/design', [ProductDesignController::class, 'updateCandidate'])->name('candidates.design.update');
-    Route::put('/product-variants/{variant}/design', [ProductDesignController::class, 'updateVariant'])->name('product-variants.design.update');
-
-    Route::get('/products-research-printful', [VendorResearchController::class, 'index'])
-        ->defaults('vendor', 'printful')->name('products-research-printful');
-    Route::get('/products-research-printful/scores', [VendorResearchController::class, 'scores'])
-        ->defaults('vendor', 'printful')->name('products-research-printful.scores');
-    Route::get('/products-research-printful/{externalId}', [VendorResearchController::class, 'show'])
-        ->defaults('vendor', 'printful')->name('products-research-printful.show');
-    Route::post('/products-research-printful/{externalId}/select', [VendorResearchController::class, 'select'])
-        ->defaults('vendor', 'printful')->name('products-research-printful.select');
-    Route::post('/products-research-printful/{externalId}/score', [VendorResearchController::class, 'score'])
-        ->defaults('vendor', 'printful')->name('products-research-printful.score');
-
-    Route::get('/products-research-cjd', [VendorResearchController::class, 'index'])
-        ->defaults('vendor', 'cj')->name('products-research-cjd');
-    Route::get('/products-research-cjd/scores', [VendorResearchController::class, 'scores'])
-        ->defaults('vendor', 'cj')->name('products-research-cjd.scores');
-    Route::get('/products-research-cjd/{externalId}', [VendorResearchController::class, 'show'])
-        ->defaults('vendor', 'cj')->name('products-research-cjd.show');
-    Route::post('/products-research-cjd/{externalId}/select', [VendorResearchController::class, 'select'])
-        ->defaults('vendor', 'cj')->name('products-research-cjd.select');
-    Route::post('/products-research-cjd/{externalId}/score', [VendorResearchController::class, 'score'])
-        ->defaults('vendor', 'cj')->name('products-research-cjd.score');
 
     Route::get('/ai-research', [AiResearchController::class, 'index'])->name('ai-research');
     Route::post('/ai-research/chat', [AiResearchController::class, 'chat'])
@@ -173,8 +178,6 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin|super-ad
     Route::get('/ai-research/conversations', [AiResearchController::class, 'conversations'])->name('ai-research.conversations');
     Route::get('/ai-research/conversations/{conversation}', [AiResearchController::class, 'showConversation'])->name('ai-research.conversations.show');
     Route::delete('/ai-research/conversations/{conversation}', [AiResearchController::class, 'destroyConversation'])->name('ai-research.conversations.destroy');
-
-    Route::get('/products-selected', [SelectedProductController::class, 'index'])->name('products-selected');
 
     Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders');
     Route::get('/orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');

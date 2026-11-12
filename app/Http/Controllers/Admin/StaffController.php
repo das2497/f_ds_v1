@@ -16,7 +16,7 @@ class StaffController extends Controller
 {
     public function index(): View
     {
-        $staff = User::role(['admin', 'super-admin'])->with('roles')->orderBy('name')->get();
+        $staff = User::role(['admin', 'super-admin', 'employee'])->with('roles')->orderBy('name')->get();
 
         return view('admin.staff.index', compact('staff'));
     }
@@ -26,7 +26,7 @@ class StaffController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-            'role' => ['required', 'in:admin,super-admin'],
+            'role' => ['required', 'in:admin,super-admin,employee'],
         ]);
 
         $tempPassword = Str::password(16);
@@ -49,7 +49,7 @@ class StaffController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email,'.$user->id],
-            'role' => ['required', 'in:admin,super-admin'],
+            'role' => ['required', 'in:admin,super-admin,employee'],
             'password' => ['nullable', 'confirmed', Password::defaults()],
         ]);
 

@@ -4,6 +4,15 @@
     <span class="text-white fw-semibold small">Admin Panel</span>
   </div>
 
+  @if (auth()->user()->hasRole('employee') && ! auth()->user()->hasAnyRole(['admin', 'super-admin']))
+  <div class="nav-section-label">Product &amp; Vendor Catalog</div>
+  <nav class="nav flex-column">
+    <a class="nav-link {{ request()->routeIs('admin.products') ? 'active' : '' }}" href="{{ route('admin.products') }}"><i class="bi bi-box-seam"></i> Products</a>
+    <a class="nav-link {{ request()->routeIs('admin.products-research-printful') ? 'active' : '' }}" href="{{ route('admin.products-research-printful') }}"><i class="bi bi-search"></i> Printful Research</a>
+    <a class="nav-link {{ request()->routeIs('admin.products-research-cjd') ? 'active' : '' }}" href="{{ route('admin.products-research-cjd') }}"><i class="bi bi-search"></i> CJD Research</a>
+    <a class="nav-link {{ request()->routeIs('admin.products-selected') ? 'active' : '' }}" href="{{ route('admin.products-selected') }}"><i class="bi bi-bookmark-check"></i> Selected Products</a>
+  </nav>
+  @else
   <div class="nav-section-label">Dashboard &amp; Analytics</div>
   <nav class="nav flex-column">
     <a class="nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}" href="{{ route('admin.dashboard') }}"><i class="bi bi-speedometer2"></i> Main Dashboard</a>
@@ -53,4 +62,5 @@
     <a class="nav-link {{ request()->routeIs('admin.maintenance') ? 'active' : '' }}" href="{{ route('admin.maintenance') }}"><i class="bi bi-hdd-stack"></i> Maintenance <span class="super-admin-tag">SA</span></a>
   </nav>
   @endrole
+  @endif
 </aside>
