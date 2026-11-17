@@ -9,11 +9,12 @@
     // can load with Add to Cart already disabled because the first color
     // happens to be out of stock while others aren't.
     $defaultColor = $defaultVariant?->color ?? $colors->first();
-    // Shown next to "Color:" when a swatch is selected — the vendor-set
-    // "Color / Size" label (e.g. "Black / AirPods Pro") so the size picked
-    // is visible too, not just the color (falls back to the bare color for
-    // variants with no size axis).
-    $defaultSelectionLabel = $defaultVariant?->option_label ?: $defaultColor;
+    // Shown next to "Color:" when a swatch is selected, built straight from
+    // the variant's own color + size — not $option_label, which an admin can
+    // leave holding just the color after editing size separately in the
+    // product form, going stale.
+    $variantLabel = fn ($v) => collect([$v->color, $v->size])->filter()->implode(' / ') ?: ($v->option_label ?: 'Variant');
+    $defaultSelectionLabel = $defaultVariant ? $variantLabel($defaultVariant) : $defaultColor;
     // The swatch grid groups every same-color variant together (then by
     // size) instead of showing them in raw database order, which otherwise
     // scatters e.g. "Black", "Grey", "Black" across the grid at random.
@@ -21,7 +22,7 @@
     $variantOptions = $product->variants->map(fn ($v) => [
         'id' => $v->id,
         'color' => $v->color,
-        'label' => $v->option_label ?: $v->color,
+        'label' => $variantLabel($v),
         'in_stock' => $v->stock_status !== 'out_of_stock',
         // Falls back to a same-color sibling's photo when this variant has
         // none of its own, matching the image shown on its swatch below.
@@ -172,7 +173,7 @@
                     // photo at all.
                     $swatchImage = $variant->image
                         ?? $product->variants->first(fn ($v) => $v->color === $variant->color && $v->image)?->image;
-                    $swatchLabel = $variant->option_label ?: $variant->color;
+                    $swatchLabel = $variantLabel($variant);
                   @endphp
                   @if ($swatchImage)
                     <button type="button" class="swatch-option swatch-color-image @if ($variant->id === $defaultVariant?->id) active @endif"

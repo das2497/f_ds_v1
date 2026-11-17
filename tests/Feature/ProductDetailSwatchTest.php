@@ -95,6 +95,34 @@ class ProductDetailSwatchTest extends TestCase
         $response->assertSee('Color: <span data-selected-color-label>Black / AirPods Pro</span>', false);
     }
 
+    public function test_the_selected_label_uses_the_size_field_even_when_option_label_is_stale(): void
+    {
+        // Mirrors the admin "Edit Product" form, where color and size are
+        // edited in their own columns but option_label (the "Variant"
+        // column) isn't regenerated — it can be left holding just the
+        // color after an admin sets/changes the size separately.
+        $product = Product::create([
+            'category_id' => $this->category()->id,
+            'title' => 'Rug With Stale Label',
+            'slug' => 'rug-stale-label',
+            'price' => 76.43,
+            'images' => [],
+            'is_active' => true,
+        ]);
+        $product->variants()->create([
+            'sku' => 'SHB-0000152', 'option_label' => 'Blue', 'color' => 'Blue', 'size' => '10*30 cm',
+            'image' => 'https://example.com/blue.jpg',
+            'cost_price' => 69.48, 'stock_status' => 'in_stock', 'is_active' => true,
+        ]);
+
+        $response = $this->get(route('products.show', $product));
+
+        $response->assertOk();
+        // The label is built from color + size directly, so it reflects the
+        // size even though option_label itself never caught up.
+        $response->assertSee('Color: <span data-selected-color-label>Blue / 10*30 cm</span>', false);
+    }
+
     public function test_swatches_are_grouped_by_color_instead_of_raw_database_order(): void
     {
         $product = Product::create([
