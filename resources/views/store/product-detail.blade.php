@@ -151,64 +151,69 @@
         </span>
       </div>
 
-      <div class="d-flex align-items-start gap-3 flex-wrap">
-        <form action="{{ route('cart.store') }}" method="POST" id="addToCartForm" class="flex-grow-1">
-          @csrf
-          <input type="hidden" name="product_variant_id" id="selectedVariantId" value="{{ $defaultVariant?->id }}">
+      {{-- The color swatch grid can grow quite wide (every variant gets its
+           own thumbnail), so it lives in its own full-width form here rather
+           than sharing a flex row with the wishlist button — otherwise the
+           heart gets squeezed out and wraps onto an awkward line of its own
+           below "Add to Cart". The quantity/cart/wishlist controls are kept
+           together as their own compact row via the `form` attribute, which
+           associates the (now sibling, not nested) inputs/button with
+           #addToCartForm without needing to physically nest them inside it. --}}
+      <form action="{{ route('cart.store') }}" method="POST" id="addToCartForm">
+        @csrf
+        <input type="hidden" name="product_variant_id" id="selectedVariantId" value="{{ $defaultVariant?->id }}">
 
-          @if ($colors->isNotEmpty())
-            <fieldset class="mb-4">
-              <legend class="small fw-semibold mb-2 pdp-option-legend">Color: <span data-selected-color-label>{{ $defaultSelectionLabel }}</span></legend>
-              <div class="d-flex flex-wrap gap-2" data-swatch-group="color">
-                {{-- Every variant gets its own thumbnail (not deduplicated by
-                     color) — two variants of the same color but a different
-                     size/model are still a different photo, so shoppers pick
-                     the exact one they want rather than a shared "Black" tile. --}}
-                @foreach ($swatchVariants as $variant)
-                  @php
-                    // Falls back to another variant's photo of the same
-                    // color when this exact variant (e.g. a size with no
-                    // photo of its own) wasn't given one — only shows as a
-                    // plain text pill when no variant of that color has any
-                    // photo at all.
-                    $swatchImage = $variant->image
-                        ?? $product->variants->first(fn ($v) => $v->color === $variant->color && $v->image)?->image;
-                    $swatchLabel = $variantLabel($variant);
-                  @endphp
-                  @if ($swatchImage)
-                    <button type="button" class="swatch-option swatch-color-image @if ($variant->id === $defaultVariant?->id) active @endif"
-                            data-variant-id="{{ $variant->id }}"
-                            data-color="{{ $variant->color }}"
-                            aria-pressed="{{ $variant->id === $defaultVariant?->id ? 'true' : 'false' }}"
-                            aria-label="Color: {{ $swatchLabel }}">
-                      <img src="{{ $swatchImage }}" alt="{{ $swatchLabel }}" loading="lazy" decoding="async">
-                    </button>
-                  @else
-                    <button type="button" class="swatch-option swatch-color swatch-color--label @if ($variant->id === $defaultVariant?->id) active @endif"
-                            data-variant-id="{{ $variant->id }}"
-                            data-color="{{ $variant->color }}"
-                            aria-pressed="{{ $variant->id === $defaultVariant?->id ? 'true' : 'false' }}"
-                            aria-label="Color: {{ $swatchLabel }}">{{ $swatchLabel }}</button>
-                  @endif
-                @endforeach
-              </div>
-            </fieldset>
-          @endif
-
-          <div class="d-flex align-items-center gap-3 mb-2 flex-wrap">
-            <div class="qty-stepper" data-qty-wrap>
-              <button type="button" data-action="qty-decrease" aria-label="Decrease quantity">&minus;</button>
-              <label for="qtyInput" class="visually-hidden">Quantity</label>
-              <input type="text" id="qtyInput" value="1" name="quantity" data-qty-input
-                     inputmode="numeric" autocomplete="off" pattern="[0-9]*">
-              <button type="button" data-action="qty-increase" aria-label="Increase quantity">+</button>
+        @if ($colors->isNotEmpty())
+          <fieldset class="mb-4">
+            <legend class="small fw-semibold mb-2 pdp-option-legend">Color: <span data-selected-color-label>{{ $defaultSelectionLabel }}</span></legend>
+            <div class="d-flex flex-wrap gap-2" data-swatch-group="color">
+              {{-- Every variant gets its own thumbnail (not deduplicated by
+                   color) — two variants of the same color but a different
+                   size/model are still a different photo, so shoppers pick
+                   the exact one they want rather than a shared "Black" tile. --}}
+              @foreach ($swatchVariants as $variant)
+                @php
+                  // Falls back to another variant's photo of the same
+                  // color when this exact variant (e.g. a size with no
+                  // photo of its own) wasn't given one — only shows as a
+                  // plain text pill when no variant of that color has any
+                  // photo at all.
+                  $swatchImage = $variant->image
+                      ?? $product->variants->first(fn ($v) => $v->color === $variant->color && $v->image)?->image;
+                  $swatchLabel = $variantLabel($variant);
+                @endphp
+                @if ($swatchImage)
+                  <button type="button" class="swatch-option swatch-color-image @if ($variant->id === $defaultVariant?->id) active @endif"
+                          data-variant-id="{{ $variant->id }}"
+                          data-color="{{ $variant->color }}"
+                          aria-pressed="{{ $variant->id === $defaultVariant?->id ? 'true' : 'false' }}"
+                          aria-label="Color: {{ $swatchLabel }}">
+                    <img src="{{ $swatchImage }}" alt="{{ $swatchLabel }}" loading="lazy" decoding="async">
+                  </button>
+                @else
+                  <button type="button" class="swatch-option swatch-color swatch-color--label @if ($variant->id === $defaultVariant?->id) active @endif"
+                          data-variant-id="{{ $variant->id }}"
+                          data-color="{{ $variant->color }}"
+                          aria-pressed="{{ $variant->id === $defaultVariant?->id ? 'true' : 'false' }}"
+                          aria-label="Color: {{ $swatchLabel }}">{{ $swatchLabel }}</button>
+                @endif
+              @endforeach
             </div>
-            <button type="submit" class="btn btn-accent flex-grow-1" @disabled(! $inStock || ! $defaultVariant)>
-              <i class="bi bi-cart-plus me-1" aria-hidden="true"></i> Add to Cart
-            </button>
-          </div>
-          <p class="small text-muted-slate mb-4" data-variant-message role="status"></p>
-        </form>
+          </fieldset>
+        @endif
+      </form>
+
+      <div class="d-flex align-items-center gap-3 mb-2 flex-wrap">
+        <div class="qty-stepper" data-qty-wrap>
+          <button type="button" data-action="qty-decrease" aria-label="Decrease quantity">&minus;</button>
+          <label for="qtyInput" class="visually-hidden">Quantity</label>
+          <input type="text" id="qtyInput" value="1" name="quantity" form="addToCartForm" data-qty-input
+                 inputmode="numeric" autocomplete="off" pattern="[0-9]*">
+          <button type="button" data-action="qty-increase" aria-label="Increase quantity">+</button>
+        </div>
+        <button type="submit" form="addToCartForm" class="btn btn-accent flex-grow-1" @disabled(! $inStock || ! $defaultVariant)>
+          <i class="bi bi-cart-plus me-1" aria-hidden="true"></i> Add to Cart
+        </button>
 
         @auth
           <form action="{{ $isWishlisted ? route('wishlist.destroy', $product) : route('wishlist.store') }}" method="POST">
@@ -228,6 +233,7 @@
           </a>
         @endauth
       </div>
+      <p class="small text-muted-slate mb-4" data-variant-message role="status"></p>
 
       <div class="card-surface p-3 mb-4">
         <h2 class="visually-hidden">Shipping, payment and cancellation</h2>
@@ -372,7 +378,10 @@
     var variants = @json($variantOptions);
     var compareAtPrice = @json($product->compare_at_price ? (float) $product->compare_at_price : null);
     var hiddenInput = document.getElementById('selectedVariantId');
-    var submitBtn = document.querySelector('#addToCartForm button[type="submit"]');
+    // Lives next to the quantity stepper now rather than nested inside
+    // #addToCartForm (it submits that form via its `form` attribute), so it
+    // can't be found with a form-descendant selector any more.
+    var submitBtn = document.querySelector('button[form="addToCartForm"][type="submit"]');
     var message = document.querySelector('[data-variant-message]');
     var selectedColorLabel = document.querySelector('[data-selected-color-label]');
     var mainImage = document.querySelector('[data-gallery-main]');
