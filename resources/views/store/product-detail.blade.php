@@ -14,6 +14,10 @@
     // is visible too, not just the color (falls back to the bare color for
     // variants with no size axis).
     $defaultSelectionLabel = $defaultVariant?->option_label ?: $defaultColor;
+    // The swatch grid groups every same-color variant together (then by
+    // size) instead of showing them in raw database order, which otherwise
+    // scatters e.g. "Black", "Grey", "Black" across the grid at random.
+    $swatchVariants = $product->variants->filter(fn ($v) => $v->color)->sortBy([['color', 'asc'], ['size', 'asc']])->values();
     $variantOptions = $product->variants->map(fn ($v) => [
         'id' => $v->id,
         'color' => $v->color,
@@ -159,7 +163,7 @@
                      color) — two variants of the same color but a different
                      size/model are still a different photo, so shoppers pick
                      the exact one they want rather than a shared "Black" tile. --}}
-                @foreach ($product->variants->filter(fn ($v) => $v->color) as $variant)
+                @foreach ($swatchVariants as $variant)
                   @php
                     // Falls back to another variant's photo of the same
                     // color when this exact variant (e.g. a size with no

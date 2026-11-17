@@ -95,6 +95,44 @@ class ProductDetailSwatchTest extends TestCase
         $response->assertSee('Color: <span data-selected-color-label>Black / AirPods Pro</span>', false);
     }
 
+    public function test_swatches_are_grouped_by_color_instead_of_raw_database_order(): void
+    {
+        $product = Product::create([
+            'category_id' => $this->category()->id,
+            'title' => 'Scattered Colors Widget',
+            'slug' => 'scattered-colors-widget',
+            'price' => 25.88,
+            'images' => [],
+            'is_active' => true,
+        ]);
+        // Created out of color order on purpose (Black, Grey, Black) — the
+        // old raw-database-order grid would scatter them exactly like this.
+        $blackSmall = $product->variants()->create([
+            'sku' => 'SHB-BLACK-S', 'option_label' => 'Black / Small', 'color' => 'Black', 'size' => 'Small',
+            'image' => 'https://example.com/black-small.jpg', 'cost_price' => 5, 'stock_status' => 'in_stock', 'is_active' => true,
+        ]);
+        $greySmall = $product->variants()->create([
+            'sku' => 'SHB-GREY-S', 'option_label' => 'Grey / Small', 'color' => 'Grey', 'size' => 'Small',
+            'image' => 'https://example.com/grey-small.jpg', 'cost_price' => 5, 'stock_status' => 'in_stock', 'is_active' => true,
+        ]);
+        $blackLarge = $product->variants()->create([
+            'sku' => 'SHB-BLACK-L', 'option_label' => 'Black / Large', 'color' => 'Black', 'size' => 'Large',
+            'image' => 'https://example.com/black-large.jpg', 'cost_price' => 5, 'stock_status' => 'in_stock', 'is_active' => true,
+        ]);
+
+        $response = $this->get(route('products.show', $product));
+
+        $response->assertOk();
+        $html = $response->getContent();
+        // Both "Black" swatches must appear before "Grey" — grouped by
+        // color, not interleaved in the order they were created.
+        $blackSmallPos = strpos($html, 'data-variant-id="'.$blackSmall->id.'"');
+        $blackLargePos = strpos($html, 'data-variant-id="'.$blackLarge->id.'"');
+        $greySmallPos = strpos($html, 'data-variant-id="'.$greySmall->id.'"');
+        $this->assertLessThan($greySmallPos, $blackSmallPos);
+        $this->assertLessThan($greySmallPos, $blackLargePos);
+    }
+
     public function test_every_variant_gets_its_own_swatch_even_when_colors_repeat(): void
     {
         $product = Product::create([
