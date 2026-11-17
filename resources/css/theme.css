@@ -920,6 +920,20 @@ body {
 .qty-stepper input::-webkit-outer-spin-button,
 .qty-stepper input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 
+@media (max-width: 575.98px) {
+  /* The quantity stepper, "Add to Cart" and the wishlist heart don't all
+     fit on one line at phone widths — the stepper and heart share a row,
+     and the button (now the widest element) drops to its own full-width
+     row below instead of the heart awkwardly wrapping on its own. */
+  .pdp-cart-actions__submit {
+    flex-basis: 100%;
+    order: 3;
+  }
+  .pdp-cart-actions__wishlist {
+    margin-left: auto;
+  }
+}
+
 /* ---------- Cart ---------- */
 
 .cart-item {

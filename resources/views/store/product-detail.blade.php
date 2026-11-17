@@ -203,7 +203,11 @@
         @endif
       </form>
 
-      <div class="d-flex align-items-center gap-3 mb-2 flex-wrap">
+      {{-- On narrow screens the quantity stepper, "Add to Cart" and the
+           wishlist heart no longer fit comfortably on one line, so below
+           575px the button drops to its own full-width row (pdp-cart-actions
+           CSS) while the stepper and heart share a tidy row above it. --}}
+      <div class="d-flex align-items-center gap-3 mb-2 flex-wrap pdp-cart-actions">
         <div class="qty-stepper" data-qty-wrap>
           <button type="button" data-action="qty-decrease" aria-label="Decrease quantity">&minus;</button>
           <label for="qtyInput" class="visually-hidden">Quantity</label>
@@ -211,12 +215,12 @@
                  inputmode="numeric" autocomplete="off" pattern="[0-9]*">
           <button type="button" data-action="qty-increase" aria-label="Increase quantity">+</button>
         </div>
-        <button type="submit" form="addToCartForm" class="btn btn-accent flex-grow-1" @disabled(! $inStock || ! $defaultVariant)>
+        <button type="submit" form="addToCartForm" class="btn btn-accent flex-grow-1 pdp-cart-actions__submit" @disabled(! $inStock || ! $defaultVariant)>
           <i class="bi bi-cart-plus me-1" aria-hidden="true"></i> Add to Cart
         </button>
 
         @auth
-          <form action="{{ $isWishlisted ? route('wishlist.destroy', $product) : route('wishlist.store') }}" method="POST">
+          <form class="pdp-cart-actions__wishlist" action="{{ $isWishlisted ? route('wishlist.destroy', $product) : route('wishlist.store') }}" method="POST">
             @csrf
             @if ($isWishlisted) @method('DELETE') @endif
             <input type="hidden" name="product_id" value="{{ $product->id }}">
@@ -227,7 +231,7 @@
             </button>
           </form>
         @else
-          <a href="{{ route('login') }}" class="product-card__wishlist position-static d-inline-flex align-items-center justify-content-center"
+          <a href="{{ route('login') }}" class="product-card__wishlist pdp-cart-actions__wishlist position-static d-inline-flex align-items-center justify-content-center"
              style="width:44px;height:44px" aria-label="Sign in to save this product to your wishlist">
             <i class="bi bi-heart" aria-hidden="true"></i>
           </a>
