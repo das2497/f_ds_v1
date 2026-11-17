@@ -874,6 +874,22 @@ body {
   color: var(--color-accent);
 }
 
+.swatch-option.swatch-color-image {
+  width: 68px;
+  height: 68px;
+  border: 2px solid var(--color-border);
+  border-radius: 10px;
+  padding: 4px;
+  background: var(--color-bg);
+}
+.swatch-option.swatch-color-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 6px;
+}
+.swatch-option.swatch-color-image.active { border-color: var(--color-accent); }
+
 .swatch-option.swatch-size {
   min-width: 42px;
   padding: 0.4rem 0.6rem;

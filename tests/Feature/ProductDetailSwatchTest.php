@@ -16,7 +16,7 @@ class ProductDetailSwatchTest extends TestCase
         return Category::create(['name' => 'Electronics', 'slug' => 'electronics']);
     }
 
-    public function test_a_non_css_color_label_renders_as_a_text_pill_not_an_invisible_dot(): void
+    public function test_a_color_without_a_variant_image_renders_as_a_text_pill(): void
     {
         $product = Product::create([
             'category_id' => $this->category()->id,
@@ -38,11 +38,37 @@ class ProductDetailSwatchTest extends TestCase
         $response = $this->get(route('products.show', $product));
 
         $response->assertOk();
-        // "Glossy" isn't a CSS color, so it must show as a readable label…
+        // Neither variant has its own photo, so both fall back to a
+        // readable text pill rather than a colored dot or a broken image.
         $response->assertSee('swatch-color--label', false);
         $response->assertSee('>Glossy<', false);
-        // …while "Red" still renders as an actual colored dot.
-        $response->assertSee('background:red', false);
+        $response->assertSee('>Red<', false);
+    }
+
+    public function test_a_color_with_a_variant_image_renders_as_an_image_swatch(): void
+    {
+        $product = Product::create([
+            'category_id' => $this->category()->id,
+            'title' => 'Photographed Widget',
+            'slug' => 'photographed-widget',
+            'price' => 19.99,
+            'images' => [],
+            'is_active' => true,
+        ]);
+        $product->variants()->create([
+            'sku' => 'SHB-BLUE', 'option_label' => 'Blue', 'color' => 'Blue', 'size' => null,
+            'image' => 'https://example.com/blue.jpg',
+            'cost_price' => 5, 'stock_status' => 'in_stock', 'is_active' => true,
+        ]);
+
+        $response = $this->get(route('products.show', $product));
+
+        $response->assertOk();
+        // The color swatch is the variant's own photo, not a dot or a pill…
+        $response->assertSee('swatch-color-image', false);
+        $response->assertSee('src="https://example.com/blue.jpg"', false);
+        // …and the "Color: Blue" label reflects the selected variant's name.
+        $response->assertSee('Color: <span data-selected-color-label>Blue</span>', false);
     }
 
     public function test_the_default_selected_swatch_matches_the_in_stock_variant_even_when_its_not_first(): void

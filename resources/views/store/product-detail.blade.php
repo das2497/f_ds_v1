@@ -157,19 +157,24 @@
 
           @if ($colors->isNotEmpty())
             <fieldset class="mb-4">
-              <legend class="small fw-semibold mb-2 pdp-option-legend">Color</legend>
+              <legend class="small fw-semibold mb-2 pdp-option-legend">Color: <span data-selected-color-label>{{ $defaultColor }}</span></legend>
               <div class="d-flex flex-wrap gap-2" data-swatch-group="color">
                 @foreach ($colors as $color)
-                  @php $cssColor = \App\Services\Html\ColorSwatch::resolve($color); @endphp
-                  @if ($cssColor)
-                    <button type="button" class="swatch-option swatch-color @if ($color === $defaultColor) active @endif"
+                  @php
+                    // The thumbnail shown for each color is that color's own
+                    // product photo, so shoppers pick by what it looks like
+                    // rather than by reading a name (falls back to a text
+                    // pill only when no variant of this color has an image).
+                    $colorImage = $product->variants->first(fn ($v) => $v->color === $color && $v->image)?->image;
+                  @endphp
+                  @if ($colorImage)
+                    <button type="button" class="swatch-option swatch-color-image @if ($color === $defaultColor) active @endif"
                             data-color="{{ $color }}"
                             aria-pressed="{{ $color === $defaultColor ? 'true' : 'false' }}"
                             aria-label="Color: {{ $color }}">
-                      <span class="swatch-color-fill" style="background:{{ $cssColor }}" aria-hidden="true"></span>
+                      <img src="{{ $colorImage }}" alt="{{ $color }}" loading="lazy" decoding="async">
                     </button>
                   @else
-                    {{-- Not a real CSS color (e.g. a finish like "Glossy", or a compound name like "Rose Gold") — a colored dot would render invisible, so show the name as a text pill instead. --}}
                     <button type="button" class="swatch-option swatch-color swatch-color--label @if ($color === $defaultColor) active @endif"
                             data-color="{{ $color }}"
                             aria-pressed="{{ $color === $defaultColor ? 'true' : 'false' }}"
@@ -374,6 +379,7 @@
     var submitBtn = document.querySelector('#addToCartForm button[type="submit"]');
     var message = document.querySelector('[data-variant-message]');
     var sizeButtons = document.querySelectorAll('[data-swatch-group="size"] .swatch-option');
+    var selectedColorLabel = document.querySelector('[data-selected-color-label]');
     var mainImage = document.querySelector('[data-gallery-main]');
     var currentPriceEl = document.querySelector('[data-current-price]');
     var comparePriceWrap = document.querySelector('[data-compare-price-wrap]');
@@ -430,6 +436,7 @@
     document.querySelectorAll('[data-swatch-group="color"] .swatch-option').forEach(function (el) {
       el.addEventListener('click', function () {
         selectedColor = el.dataset.color;
+        if (selectedColorLabel) selectedColorLabel.textContent = selectedColor;
         updateSelectedVariant();
       });
     });
