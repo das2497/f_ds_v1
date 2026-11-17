@@ -890,20 +890,6 @@ body {
 }
 .swatch-option.swatch-color-image.active { border-color: var(--color-accent); }
 
-.swatch-option.swatch-size {
-  min-width: 42px;
-  padding: 0.4rem 0.6rem;
-  border: 1.5px solid var(--color-border);
-  border-radius: 8px;
-  font-size: 0.85rem;
-  font-weight: 600;
-}
-.swatch-option.swatch-size.active {
-  border-color: var(--color-accent);
-  background: rgba(37,99,235,0.08);
-  color: var(--color-accent);
-}
-
 .qty-stepper {
   display: inline-flex;
   align-items: center;

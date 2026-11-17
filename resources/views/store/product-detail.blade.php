@@ -2,28 +2,16 @@
     use App\Services\Seo\StructuredData;
 
     $colors = $product->variants->pluck('color')->filter()->unique()->values();
-    $sizes = $product->variants->pluck('size')->filter()->unique()->values();
     $inStock = $product->variants->contains(fn ($v) => $v->stock_status !== 'out_of_stock');
     $defaultVariant = $product->variants->first(fn ($v) => $v->stock_status !== 'out_of_stock') ?? $product->variants->first();
-    // The default-selected swatches must match $defaultVariant (preferring
-    // an in-stock variant), not just "first in the list" — otherwise the
-    // page can load with Add to Cart already disabled because the first
-    // color/size combo happens to be out of stock while others aren't.
+    // The default-selected swatch must match $defaultVariant (preferring an
+    // in-stock variant), not just "first in the list" — otherwise the page
+    // can load with Add to Cart already disabled because the first color
+    // happens to be out of stock while others aren't.
     $defaultColor = $defaultVariant?->color ?? $colors->first();
-    $defaultSize = $defaultVariant?->size ?? $sizes->first();
-    // The customer-facing size picker shows each variant's own named label
-    // (e.g. "Black / 11 oz", set by the vendor in the admin panel) rather
-    // than the bare size value, so it matches what's configured there.
-    $sizeOptionLabels = $sizes->mapWithKeys(function ($size) use ($product, $defaultColor) {
-        $variant = $product->variants->first(fn ($v) => $v->size === $size && $v->color === $defaultColor)
-            ?? $product->variants->first(fn ($v) => $v->size === $size);
-
-        return [$size => $variant?->option_label ?? $size];
-    });
     $variantOptions = $product->variants->map(fn ($v) => [
         'id' => $v->id,
         'color' => $v->color,
-        'size' => $v->size,
         'in_stock' => $v->stock_status !== 'out_of_stock',
         'image' => $v->image,
         'price' => (float) ($v->price ?? $product->price),
@@ -180,20 +168,6 @@
                             aria-pressed="{{ $color === $defaultColor ? 'true' : 'false' }}"
                             aria-label="Color: {{ $color }}">{{ $color }}</button>
                   @endif
-                @endforeach
-              </div>
-            </fieldset>
-          @endif
-
-          @if ($sizes->isNotEmpty())
-            <fieldset class="mb-4">
-              <legend class="small fw-semibold mb-2 pdp-option-legend">Variation</legend>
-              <div class="d-flex flex-wrap gap-2" data-swatch-group="size">
-                @foreach ($sizes as $size)
-                  <button type="button" class="swatch-option swatch-size @if ($size === $defaultSize) active @endif"
-                          data-size="{{ $size }}"
-                          aria-pressed="{{ $size === $defaultSize ? 'true' : 'false' }}"
-                          aria-label="Variation: {{ $sizeOptionLabels[$size] }}">{{ $sizeOptionLabels[$size] }}</button>
                 @endforeach
               </div>
             </fieldset>
@@ -378,7 +352,6 @@
     var hiddenInput = document.getElementById('selectedVariantId');
     var submitBtn = document.querySelector('#addToCartForm button[type="submit"]');
     var message = document.querySelector('[data-variant-message]');
-    var sizeButtons = document.querySelectorAll('[data-swatch-group="size"] .swatch-option');
     var selectedColorLabel = document.querySelector('[data-selected-color-label]');
     var mainImage = document.querySelector('[data-gallery-main]');
     var currentPriceEl = document.querySelector('[data-current-price]');
@@ -404,7 +377,6 @@
     // class is applied by the shared swatch handler in main.js, which may
     // run after this listener for the same click.
     var selectedColor = @json($defaultColor);
-    var selectedSize = @json($defaultSize);
 
     // Picking a variant swaps the main photo to that variant's own chosen
     // image (previously it never changed, so choosing "Black" could still
@@ -418,7 +390,7 @@
 
     function updateSelectedVariant() {
       var match = variants.find(function (v) {
-        return (!selectedColor || v.color === selectedColor) && (!selectedSize || v.size === selectedSize);
+        return !selectedColor || v.color === selectedColor;
       });
 
       if (match) {
@@ -437,13 +409,6 @@
       el.addEventListener('click', function () {
         selectedColor = el.dataset.color;
         if (selectedColorLabel) selectedColorLabel.textContent = selectedColor;
-        updateSelectedVariant();
-      });
-    });
-
-    sizeButtons.forEach(function (el) {
-      el.addEventListener('click', function () {
-        selectedSize = el.dataset.size;
         updateSelectedVariant();
       });
     });
