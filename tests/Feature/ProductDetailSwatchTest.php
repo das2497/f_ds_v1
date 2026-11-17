@@ -67,8 +67,8 @@ class ProductDetailSwatchTest extends TestCase
         // The color swatch is the variant's own photo, not a dot or a pill…
         $response->assertSee('swatch-color-image', false);
         $response->assertSee('src="https://example.com/blue.jpg"', false);
-        // …and the "Color: Blue" label reflects the selected variant's name.
-        $response->assertSee('Color: <span data-selected-color-label>Blue</span>', false);
+        // …and the "Variant: Blue" label reflects the selected variant's name.
+        $response->assertSee('Variant: <span data-selected-color-label>Blue</span>', false);
     }
 
     public function test_the_selected_label_shows_the_variants_size_alongside_its_color(): void
@@ -92,7 +92,7 @@ class ProductDetailSwatchTest extends TestCase
         $response->assertOk();
         // The default label shows the full "Color / Size" combo, not just
         // the bare color, so the size picked is visible up front.
-        $response->assertSee('Color: <span data-selected-color-label>Black / AirPods Pro</span>', false);
+        $response->assertSee('Variant: <span data-selected-color-label>Black / AirPods Pro</span>', false);
     }
 
     public function test_the_selected_label_uses_the_size_field_even_when_option_label_is_stale(): void
@@ -120,7 +120,7 @@ class ProductDetailSwatchTest extends TestCase
         $response->assertOk();
         // The label is built from color + size directly, so it reflects the
         // size even though option_label itself never caught up.
-        $response->assertSee('Color: <span data-selected-color-label>Blue / 10*30 cm</span>', false);
+        $response->assertSee('Variant: <span data-selected-color-label>Blue / 10*30 cm</span>', false);
     }
 
     public function test_swatches_are_grouped_by_color_instead_of_raw_database_order(): void

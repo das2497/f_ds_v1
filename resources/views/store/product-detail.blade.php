@@ -9,7 +9,7 @@
     // can load with Add to Cart already disabled because the first color
     // happens to be out of stock while others aren't.
     $defaultColor = $defaultVariant?->color ?? $colors->first();
-    // Shown next to "Color:" when a swatch is selected, built straight from
+    // Shown next to "Variant:" when a swatch is selected, built straight from
     // the variant's own color + size — not $option_label, which an admin can
     // leave holding just the color after editing size separately in the
     // product form, going stale.
@@ -165,7 +165,7 @@
 
         @if ($colors->isNotEmpty())
           <fieldset class="mb-4">
-            <legend class="small fw-semibold mb-2 pdp-option-legend">Color: <span data-selected-color-label>{{ $defaultSelectionLabel }}</span></legend>
+            <legend class="small fw-semibold mb-2 pdp-option-legend">Variant: <span data-selected-color-label>{{ $defaultSelectionLabel }}</span></legend>
             <div class="d-flex flex-wrap gap-2" data-swatch-group="color">
               {{-- Every variant gets its own thumbnail (not deduplicated by
                    color) — two variants of the same color but a different
@@ -187,7 +187,7 @@
                           data-variant-id="{{ $variant->id }}"
                           data-color="{{ $variant->color }}"
                           aria-pressed="{{ $variant->id === $defaultVariant?->id ? 'true' : 'false' }}"
-                          aria-label="Color: {{ $swatchLabel }}">
+                          aria-label="Variant: {{ $swatchLabel }}">
                     <img src="{{ $swatchImage }}" alt="{{ $swatchLabel }}" loading="lazy" decoding="async">
                   </button>
                 @else
@@ -195,7 +195,7 @@
                           data-variant-id="{{ $variant->id }}"
                           data-color="{{ $variant->color }}"
                           aria-pressed="{{ $variant->id === $defaultVariant?->id ? 'true' : 'false' }}"
-                          aria-label="Color: {{ $swatchLabel }}">{{ $swatchLabel }}</button>
+                          aria-label="Variant: {{ $swatchLabel }}">{{ $swatchLabel }}</button>
                 @endif
               @endforeach
             </div>
