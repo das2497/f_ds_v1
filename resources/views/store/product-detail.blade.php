@@ -147,26 +147,25 @@
             <fieldset class="mb-4">
               <legend class="small fw-semibold mb-2 pdp-option-legend">Color: <span data-selected-color-label>{{ $defaultColor }}</span></legend>
               <div class="d-flex flex-wrap gap-2" data-swatch-group="color">
-                @foreach ($colors as $color)
-                  @php
-                    // The thumbnail shown for each color is that color's own
-                    // product photo, so shoppers pick by what it looks like
-                    // rather than by reading a name (falls back to a text
-                    // pill only when no variant of this color has an image).
-                    $colorImage = $product->variants->first(fn ($v) => $v->color === $color && $v->image)?->image;
-                  @endphp
-                  @if ($colorImage)
-                    <button type="button" class="swatch-option swatch-color-image @if ($color === $defaultColor) active @endif"
-                            data-color="{{ $color }}"
-                            aria-pressed="{{ $color === $defaultColor ? 'true' : 'false' }}"
-                            aria-label="Color: {{ $color }}">
-                      <img src="{{ $colorImage }}" alt="{{ $color }}" loading="lazy" decoding="async">
+                {{-- Every variant gets its own thumbnail (not deduplicated by
+                     color) — two variants of the same color but a different
+                     size/model are still a different photo, so shoppers pick
+                     the exact one they want rather than a shared "Black" tile. --}}
+                @foreach ($product->variants->filter(fn ($v) => $v->color) as $variant)
+                  @if ($variant->image)
+                    <button type="button" class="swatch-option swatch-color-image @if ($variant->id === $defaultVariant?->id) active @endif"
+                            data-variant-id="{{ $variant->id }}"
+                            data-color="{{ $variant->color }}"
+                            aria-pressed="{{ $variant->id === $defaultVariant?->id ? 'true' : 'false' }}"
+                            aria-label="Color: {{ $variant->color }}">
+                      <img src="{{ $variant->image }}" alt="{{ $variant->color }}" loading="lazy" decoding="async">
                     </button>
                   @else
-                    <button type="button" class="swatch-option swatch-color swatch-color--label @if ($color === $defaultColor) active @endif"
-                            data-color="{{ $color }}"
-                            aria-pressed="{{ $color === $defaultColor ? 'true' : 'false' }}"
-                            aria-label="Color: {{ $color }}">{{ $color }}</button>
+                    <button type="button" class="swatch-option swatch-color swatch-color--label @if ($variant->id === $defaultVariant?->id) active @endif"
+                            data-variant-id="{{ $variant->id }}"
+                            data-color="{{ $variant->color }}"
+                            aria-pressed="{{ $variant->id === $defaultVariant?->id ? 'true' : 'false' }}"
+                            aria-label="Color: {{ $variant->color }}">{{ $variant->color }}</button>
                   @endif
                 @endforeach
               </div>
@@ -373,11 +372,6 @@
       }
     }
 
-    // Tracked here rather than read back from the DOM, because the .active
-    // class is applied by the shared swatch handler in main.js, which may
-    // run after this listener for the same click.
-    var selectedColor = @json($defaultColor);
-
     // Picking a variant swaps the main photo to that variant's own chosen
     // image (previously it never changed, so choosing "Black" could still
     // show a white product photo) — the image an admin picked for that
@@ -388,32 +382,33 @@
       }
     }
 
-    function updateSelectedVariant() {
-      var match = variants.find(function (v) {
-        return !selectedColor || v.color === selectedColor;
-      });
+    // Each swatch is its own exact variant now (not a color shared across
+    // several variants), so selecting one is a direct id lookup rather than
+    // a color match.
+    function selectVariant(variant) {
+      if (!variant) return;
+      hiddenInput.value = variant.id;
+      if (selectedColorLabel) selectedColorLabel.textContent = variant.color || '';
+      if (submitBtn) submitBtn.disabled = !variant.in_stock;
+      if (message) message.textContent = variant.in_stock ? '' : 'This option is sold out — try another.';
+      updateGalleryForVariant(variant);
+      updatePriceForVariant(variant);
+    }
 
-      if (match) {
-        hiddenInput.value = match.id;
-        if (submitBtn) submitBtn.disabled = !match.in_stock;
-        if (message) message.textContent = match.in_stock ? '' : 'This combination is sold out — try another option.';
-        updateGalleryForVariant(match);
-        updatePriceForVariant(match);
-      } else {
-        if (submitBtn) submitBtn.disabled = true;
-        if (message) message.textContent = 'That combination is not available.';
-      }
+    function variantById(id) {
+      return variants.find(function (v) { return v.id === id; });
     }
 
     document.querySelectorAll('[data-swatch-group="color"] .swatch-option').forEach(function (el) {
       el.addEventListener('click', function () {
-        selectedColor = el.dataset.color;
-        if (selectedColorLabel) selectedColorLabel.textContent = selectedColor;
-        updateSelectedVariant();
+        selectVariant(variantById(parseInt(el.dataset.variantId, 10)));
       });
     });
 
-    updateSelectedVariant();
+    // Syncs the main photo and price to the default variant on load, since
+    // the gallery otherwise starts on the product's first general photo
+    // rather than the specific variant that's actually pre-selected.
+    selectVariant(variantById(@json($defaultVariant?->id)));
   })();
 
   (function () {

@@ -71,6 +71,39 @@ class ProductDetailSwatchTest extends TestCase
         $response->assertSee('Color: <span data-selected-color-label>Blue</span>', false);
     }
 
+    public function test_every_variant_gets_its_own_swatch_even_when_colors_repeat(): void
+    {
+        $product = Product::create([
+            'category_id' => $this->category()->id,
+            'title' => 'Rug',
+            'slug' => 'rug',
+            'price' => 51.96,
+            'images' => [],
+            'is_active' => true,
+        ]);
+        // Two differently-sized variants sharing the same color — each has
+        // its own photo and must render as its own swatch, not collapse
+        // into a single "Grey and White" tile.
+        $small = $product->variants()->create([
+            'sku' => 'SHB-RUG-S', 'option_label' => 'Grey and White / Small', 'color' => 'Grey and White', 'size' => 'Small',
+            'image' => 'https://example.com/rug-small.jpg',
+            'cost_price' => 5, 'stock_status' => 'in_stock', 'is_active' => true,
+        ]);
+        $large = $product->variants()->create([
+            'sku' => 'SHB-RUG-L', 'option_label' => 'Grey and White / Large', 'color' => 'Grey and White', 'size' => 'Large',
+            'image' => 'https://example.com/rug-large.jpg',
+            'cost_price' => 5, 'stock_status' => 'in_stock', 'is_active' => true,
+        ]);
+
+        $response = $this->get(route('products.show', $product));
+
+        $response->assertOk();
+        $response->assertSee('data-variant-id="'.$small->id.'"', false);
+        $response->assertSee('data-variant-id="'.$large->id.'"', false);
+        $response->assertSee('src="https://example.com/rug-small.jpg"', false);
+        $response->assertSee('src="https://example.com/rug-large.jpg"', false);
+    }
+
     public function test_the_default_selected_swatch_matches_the_in_stock_variant_even_when_its_not_first(): void
     {
         $product = Product::create([
