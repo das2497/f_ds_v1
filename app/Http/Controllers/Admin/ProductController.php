@@ -334,6 +334,25 @@ class ProductController extends Controller
         return redirect()->route('admin.products')->with('status', "\"{$title}\" was deleted.");
     }
 
+    public function destroyVariant(ProductVariant $variant): RedirectResponse
+    {
+        $product = $variant->product;
+
+        // A product with zero variants has nothing for the storefront's
+        // "Add to Cart" to resolve to, so the last one can't be removed —
+        // the admin has to either replace it first or delete the product.
+        if ($product->variants()->count() <= 1) {
+            return back()->withErrors(['variants' => 'Can\'t delete the only variant left on this product — add a replacement first, or delete the product instead.']);
+        }
+
+        $label = $variant->option_label;
+        $variant->delete();
+
+        AuditLog::record('Product Variant Deleted', "\"{$label}\" removed from \"{$product->title}\" (#{$product->id})");
+
+        return back()->with('status', "\"{$label}\" variant was deleted.");
+    }
+
     public function edit(Product $product): View
     {
         $product->load('variants', 'vendorProductCandidate', 'aiScore');

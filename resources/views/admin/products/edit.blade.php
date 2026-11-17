@@ -75,7 +75,7 @@
                     <p class="small text-muted-slate">Edit details, replace images, or untick "Active" to stop selling a variant without deleting it. Leave "Price" blank to use the shop's retail price above for that variant.</p>
                     <div class="table-responsive">
                         <table class="table table-admin align-middle mb-0">
-                            <thead><tr><th>Active</th><th>Image</th><th>Variant</th><th>Color</th><th>Size</th><th>Internal SKU</th><th>Weight (lb)</th><th>Cost</th><th>Price</th>@if ($product->source_vendor === 'printful')<th>Design</th>@endif</tr></thead>
+                            <thead><tr><th>Active</th><th>Image</th><th>Variant</th><th>Color</th><th>Size</th><th>Internal SKU</th><th>Weight (lb)</th><th>Cost</th><th>Price</th>@if ($product->source_vendor === 'printful')<th>Design</th>@endif<th></th></tr></thead>
                             <tbody>
                                 @foreach ($product->variants as $variant)
                                     <tr>
@@ -116,6 +116,14 @@
                                                 <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#designModal-variant-{{ $variant->id }}"><i class="bi bi-brush"></i> Design</button>
                                             </td>
                                         @endif
+                                        <td>
+                                            {{-- Submits the standalone #deleteVariantForm-{id} below via the
+                                                 form attribute — a real <form> can't nest inside #productForm,
+                                                 which wraps this whole table. --}}
+                                            <button type="submit" form="deleteVariantForm-{{ $variant->id }}" class="btn-icon btn-icon-danger" title="Delete this variant">
+                                                <i class="bi bi-trash3"></i>
+                                            </button>
+                                        </td>
                                     </tr>
                                 @endforeach
                             </tbody>
@@ -294,6 +302,17 @@
             </div>
         </div>
     </form>
+
+    {{-- One standalone delete form per existing variant, submitted by its
+         row's trash button above via the HTML5 form="" attribute — they
+         can't live inside #productForm since forms don't nest. --}}
+    @foreach ($product->variants as $variant)
+        <form id="deleteVariantForm-{{ $variant->id }}" action="{{ route('admin.product-variants.destroy', $variant) }}" method="POST"
+              class="d-none" onsubmit="return confirm('Permanently delete the &quot;{{ $variant->option_label }}&quot; variant? This cannot be undone.');">
+            @csrf
+            @method('DELETE')
+        </form>
+    @endforeach
 
     <script>
         (function () {

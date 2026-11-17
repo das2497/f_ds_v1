@@ -501,4 +501,82 @@ class ProductVariantManagementTest extends TestCase
 
         $this->assertSame('<p>Soft <strong>silicone</strong> case.</p>', $product->fresh()->description);
     }
+
+    public function test_an_admin_can_delete_a_variant(): void
+    {
+        $category = $this->category();
+        $product = Product::create([
+            'category_id' => $category->id,
+            'title' => 'Rubber Case for AirPods',
+            'slug' => 'rubber-case-for-airpods',
+            'price' => 25.88,
+            'images' => [],
+            'is_active' => true,
+        ]);
+        $black = $product->variants()->create([
+            'sku' => 'SHB-CASE-1', 'option_label' => 'Black / AirPods Pro', 'color' => 'Black', 'size' => 'AirPods Pro',
+            'cost_price' => 10.35, 'stock_status' => 'in_stock', 'is_active' => true,
+        ]);
+        $product->variants()->create([
+            'sku' => 'SHB-CASE-2', 'option_label' => 'Blue / AirPods Pro', 'color' => 'Blue', 'size' => 'AirPods Pro',
+            'cost_price' => 10.35, 'stock_status' => 'in_stock', 'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($this->admin())->delete(route('admin.product-variants.destroy', $black));
+
+        $response->assertRedirect();
+        $this->assertDatabaseMissing('product_variants', ['id' => $black->id]);
+        $this->assertSame(1, $product->variants()->count());
+    }
+
+    public function test_deleting_the_only_remaining_variant_is_rejected(): void
+    {
+        $category = $this->category();
+        $product = Product::create([
+            'category_id' => $category->id,
+            'title' => 'Rubber Case for AirPods',
+            'slug' => 'rubber-case-for-airpods',
+            'price' => 25.88,
+            'images' => [],
+            'is_active' => true,
+        ]);
+        $variant = $product->variants()->create([
+            'sku' => 'SHB-CASE-1', 'option_label' => 'Black / AirPods Pro', 'color' => 'Black', 'size' => 'AirPods Pro',
+            'cost_price' => 10.35, 'stock_status' => 'in_stock', 'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($this->admin())->delete(route('admin.product-variants.destroy', $variant));
+
+        $response->assertSessionHasErrors('variants');
+        $this->assertDatabaseHas('product_variants', ['id' => $variant->id]);
+    }
+
+    public function test_a_non_admin_cannot_delete_a_variant(): void
+    {
+        $this->seed(RoleSeeder::class);
+        $customer = User::factory()->create();
+
+        $category = $this->category();
+        $product = Product::create([
+            'category_id' => $category->id,
+            'title' => 'Rubber Case for AirPods',
+            'slug' => 'rubber-case-for-airpods',
+            'price' => 25.88,
+            'images' => [],
+            'is_active' => true,
+        ]);
+        $black = $product->variants()->create([
+            'sku' => 'SHB-CASE-1', 'option_label' => 'Black / AirPods Pro', 'color' => 'Black', 'size' => 'AirPods Pro',
+            'cost_price' => 10.35, 'stock_status' => 'in_stock', 'is_active' => true,
+        ]);
+        $product->variants()->create([
+            'sku' => 'SHB-CASE-2', 'option_label' => 'Blue / AirPods Pro', 'color' => 'Blue', 'size' => 'AirPods Pro',
+            'cost_price' => 10.35, 'stock_status' => 'in_stock', 'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($customer)->delete(route('admin.product-variants.destroy', $black));
+
+        $response->assertForbidden();
+        $this->assertDatabaseHas('product_variants', ['id' => $black->id]);
+    }
 }

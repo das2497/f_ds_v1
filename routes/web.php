@@ -106,6 +106,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin|super-ad
     Route::post('/product-designs/upload-image', [ProductDesignController::class, 'uploadImage'])->name('product-designs.upload-image');
     Route::put('/product-candidates/{candidate}/design', [ProductDesignController::class, 'updateCandidate'])->name('candidates.design.update');
     Route::put('/product-variants/{variant}/design', [ProductDesignController::class, 'updateVariant'])->name('product-variants.design.update');
+    Route::delete('/product-variants/{variant}', [AdminProductController::class, 'destroyVariant'])->name('product-variants.destroy');
 
     Route::get('/products-research-printful', [VendorResearchController::class, 'index'])
         ->defaults('vendor', 'printful')->name('products-research-printful');
