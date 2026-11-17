@@ -9,9 +9,15 @@
     // can load with Add to Cart already disabled because the first color
     // happens to be out of stock while others aren't.
     $defaultColor = $defaultVariant?->color ?? $colors->first();
+    // Shown next to "Color:" when a swatch is selected — the vendor-set
+    // "Color / Size" label (e.g. "Black / AirPods Pro") so the size picked
+    // is visible too, not just the color (falls back to the bare color for
+    // variants with no size axis).
+    $defaultSelectionLabel = $defaultVariant?->option_label ?: $defaultColor;
     $variantOptions = $product->variants->map(fn ($v) => [
         'id' => $v->id,
         'color' => $v->color,
+        'label' => $v->option_label ?: $v->color,
         'in_stock' => $v->stock_status !== 'out_of_stock',
         // Falls back to a same-color sibling's photo when this variant has
         // none of its own, matching the image shown on its swatch below.
@@ -147,7 +153,7 @@
 
           @if ($colors->isNotEmpty())
             <fieldset class="mb-4">
-              <legend class="small fw-semibold mb-2 pdp-option-legend">Color: <span data-selected-color-label>{{ $defaultColor }}</span></legend>
+              <legend class="small fw-semibold mb-2 pdp-option-legend">Color: <span data-selected-color-label>{{ $defaultSelectionLabel }}</span></legend>
               <div class="d-flex flex-wrap gap-2" data-swatch-group="color">
                 {{-- Every variant gets its own thumbnail (not deduplicated by
                      color) — two variants of the same color but a different
@@ -162,21 +168,22 @@
                     // photo at all.
                     $swatchImage = $variant->image
                         ?? $product->variants->first(fn ($v) => $v->color === $variant->color && $v->image)?->image;
+                    $swatchLabel = $variant->option_label ?: $variant->color;
                   @endphp
                   @if ($swatchImage)
                     <button type="button" class="swatch-option swatch-color-image @if ($variant->id === $defaultVariant?->id) active @endif"
                             data-variant-id="{{ $variant->id }}"
                             data-color="{{ $variant->color }}"
                             aria-pressed="{{ $variant->id === $defaultVariant?->id ? 'true' : 'false' }}"
-                            aria-label="Color: {{ $variant->color }}">
-                      <img src="{{ $swatchImage }}" alt="{{ $variant->color }}" loading="lazy" decoding="async">
+                            aria-label="Color: {{ $swatchLabel }}">
+                      <img src="{{ $swatchImage }}" alt="{{ $swatchLabel }}" loading="lazy" decoding="async">
                     </button>
                   @else
                     <button type="button" class="swatch-option swatch-color swatch-color--label @if ($variant->id === $defaultVariant?->id) active @endif"
                             data-variant-id="{{ $variant->id }}"
                             data-color="{{ $variant->color }}"
                             aria-pressed="{{ $variant->id === $defaultVariant?->id ? 'true' : 'false' }}"
-                            aria-label="Color: {{ $variant->color }}">{{ $variant->color }}</button>
+                            aria-label="Color: {{ $swatchLabel }}">{{ $swatchLabel }}</button>
                   @endif
                 @endforeach
               </div>
@@ -399,7 +406,7 @@
     function selectVariant(variant) {
       if (!variant) return;
       hiddenInput.value = variant.id;
-      if (selectedColorLabel) selectedColorLabel.textContent = variant.color || '';
+      if (selectedColorLabel) selectedColorLabel.textContent = variant.label || variant.color || '';
       if (submitBtn) submitBtn.disabled = !variant.in_stock;
       if (message) message.textContent = variant.in_stock ? '' : 'This option is sold out — try another.';
       updateGalleryForVariant(variant);

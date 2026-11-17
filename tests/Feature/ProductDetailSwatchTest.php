@@ -71,6 +71,30 @@ class ProductDetailSwatchTest extends TestCase
         $response->assertSee('Color: <span data-selected-color-label>Blue</span>', false);
     }
 
+    public function test_the_selected_label_shows_the_variants_size_alongside_its_color(): void
+    {
+        $product = Product::create([
+            'category_id' => $this->category()->id,
+            'title' => 'Rubber Case',
+            'slug' => 'rubber-case',
+            'price' => 25.88,
+            'images' => [],
+            'is_active' => true,
+        ]);
+        $product->variants()->create([
+            'sku' => 'SHB-BLACK-PRO', 'option_label' => 'Black / AirPods Pro', 'color' => 'Black', 'size' => 'AirPods Pro',
+            'image' => 'https://example.com/black-pro.jpg',
+            'cost_price' => 5, 'stock_status' => 'in_stock', 'is_active' => true,
+        ]);
+
+        $response = $this->get(route('products.show', $product));
+
+        $response->assertOk();
+        // The default label shows the full "Color / Size" combo, not just
+        // the bare color, so the size picked is visible up front.
+        $response->assertSee('Color: <span data-selected-color-label>Black / AirPods Pro</span>', false);
+    }
+
     public function test_every_variant_gets_its_own_swatch_even_when_colors_repeat(): void
     {
         $product = Product::create([
