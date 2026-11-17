@@ -13,7 +13,9 @@
         'id' => $v->id,
         'color' => $v->color,
         'in_stock' => $v->stock_status !== 'out_of_stock',
-        'image' => $v->image,
+        // Falls back to a same-color sibling's photo when this variant has
+        // none of its own, matching the image shown on its swatch below.
+        'image' => $v->image ?? $product->variants->first(fn ($sibling) => $sibling->color === $v->color && $sibling->image)?->image,
         'price' => (float) ($v->price ?? $product->price),
     ])->values();
     $defaultPrice = (float) ($defaultVariant?->price ?? $product->price);
@@ -152,13 +154,22 @@
                      size/model are still a different photo, so shoppers pick
                      the exact one they want rather than a shared "Black" tile. --}}
                 @foreach ($product->variants->filter(fn ($v) => $v->color) as $variant)
-                  @if ($variant->image)
+                  @php
+                    // Falls back to another variant's photo of the same
+                    // color when this exact variant (e.g. a size with no
+                    // photo of its own) wasn't given one — only shows as a
+                    // plain text pill when no variant of that color has any
+                    // photo at all.
+                    $swatchImage = $variant->image
+                        ?? $product->variants->first(fn ($v) => $v->color === $variant->color && $v->image)?->image;
+                  @endphp
+                  @if ($swatchImage)
                     <button type="button" class="swatch-option swatch-color-image @if ($variant->id === $defaultVariant?->id) active @endif"
                             data-variant-id="{{ $variant->id }}"
                             data-color="{{ $variant->color }}"
                             aria-pressed="{{ $variant->id === $defaultVariant?->id ? 'true' : 'false' }}"
                             aria-label="Color: {{ $variant->color }}">
-                      <img src="{{ $variant->image }}" alt="{{ $variant->color }}" loading="lazy" decoding="async">
+                      <img src="{{ $swatchImage }}" alt="{{ $variant->color }}" loading="lazy" decoding="async">
                     </button>
                   @else
                     <button type="button" class="swatch-option swatch-color swatch-color--label @if ($variant->id === $defaultVariant?->id) active @endif"

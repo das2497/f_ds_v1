@@ -104,6 +104,39 @@ class ProductDetailSwatchTest extends TestCase
         $response->assertSee('src="https://example.com/rug-large.jpg"', false);
     }
 
+    public function test_a_variant_without_its_own_image_borrows_a_same_color_siblings_photo(): void
+    {
+        $product = Product::create([
+            'category_id' => $this->category()->id,
+            'title' => 'Rug With A Missing Size Photo',
+            'slug' => 'rug-missing-size-photo',
+            'price' => 51.96,
+            'images' => [],
+            'is_active' => true,
+        ]);
+        $photographed = $product->variants()->create([
+            'sku' => 'SHB-RUG-S', 'option_label' => 'Grey / Small', 'color' => 'Grey', 'size' => 'Small',
+            'image' => 'https://example.com/rug-grey.jpg',
+            'cost_price' => 5, 'stock_status' => 'in_stock', 'is_active' => true,
+        ]);
+        $unphotographed = $product->variants()->create([
+            'sku' => 'SHB-RUG-L', 'option_label' => 'Grey / Large', 'color' => 'Grey', 'size' => 'Large',
+            'cost_price' => 5, 'stock_status' => 'in_stock', 'is_active' => true,
+        ]);
+
+        $response = $this->get(route('products.show', $product));
+
+        $response->assertOk();
+        // The "Large" variant has no photo of its own, so it still renders
+        // as an image swatch — using the "Small" variant's photo — rather
+        // than falling back to a plain "Grey" text pill.
+        $response->assertSee('data-variant-id="'.$unphotographed->id.'"', false);
+        $response->assertDontSee('swatch-color--label', false);
+
+        $html = $response->getContent();
+        $this->assertSame(2, substr_count($html, 'src="https://example.com/rug-grey.jpg"'));
+    }
+
     public function test_the_default_selected_swatch_matches_the_in_stock_variant_even_when_its_not_first(): void
     {
         $product = Product::create([
