@@ -227,6 +227,39 @@ class ProductDetailSwatchTest extends TestCase
         $this->assertSame(2, substr_count($html, 'src="https://example.com/rug-grey.jpg"'));
     }
 
+    public function test_variants_without_a_color_still_show_a_picker_using_their_name(): void
+    {
+        // Mirrors a bedding set whose variants only differ by pattern name
+        // and size — color is left blank in the admin, which used to hide
+        // the picker entirely because the grid only included variants with
+        // a color set.
+        $product = Product::create([
+            'category_id' => $this->category()->id,
+            'title' => 'Bedding Set',
+            'slug' => 'bedding-set',
+            'price' => 120.00,
+            'images' => [],
+            'is_active' => true,
+        ]);
+        $flower = $product->variants()->create([
+            'sku' => 'SHB-0000448', 'option_label' => 'Flower', 'color' => null, 'size' => '68x88in',
+            'cost_price' => 60, 'stock_status' => 'in_stock', 'is_active' => true,
+        ]);
+        $blosso = $product->variants()->create([
+            'sku' => 'SHB-0000449', 'option_label' => 'Blosso', 'color' => null, 'size' => '68x88in',
+            'cost_price' => 60, 'stock_status' => 'in_stock', 'is_active' => true,
+        ]);
+
+        $response = $this->get(route('products.show', $product));
+
+        $response->assertOk();
+        // The picker renders at all, and each pill shows the variant's name
+        // rather than being skipped for lacking a color.
+        $response->assertSee('data-variant-id="'.$flower->id.'"', false);
+        $response->assertSee('data-variant-id="'.$blosso->id.'"', false);
+        $response->assertSee('Variant: <span data-selected-color-label>Flower / 68x88in</span>', false);
+    }
+
     public function test_the_default_selected_swatch_matches_the_in_stock_variant_even_when_its_not_first(): void
     {
         $product = Product::create([

@@ -1,32 +1,28 @@
 @php
     use App\Services\Seo\StructuredData;
 
-    $colors = $product->variants->pluck('color')->filter()->unique()->values();
     $inStock = $product->variants->contains(fn ($v) => $v->stock_status !== 'out_of_stock');
     $defaultVariant = $product->variants->first(fn ($v) => $v->stock_status !== 'out_of_stock') ?? $product->variants->first();
-    // The default-selected swatch must match $defaultVariant (preferring an
-    // in-stock variant), not just "first in the list" — otherwise the page
-    // can load with Add to Cart already disabled because the first color
-    // happens to be out of stock while others aren't.
-    $defaultColor = $defaultVariant?->color ?? $colors->first();
-    // Shown next to "Variant:" when a swatch is selected, built straight from
-    // the variant's own color + size — not $option_label, which an admin can
-    // leave holding just the color after editing size separately in the
-    // product form, going stale.
-    $variantLabel = fn ($v) => collect([$v->color, $v->size])->filter()->implode(' / ') ?: ($v->option_label ?: 'Variant');
-    $defaultSelectionLabel = $defaultVariant ? $variantLabel($defaultVariant) : $defaultColor;
-    // The swatch grid groups every same-color variant together (then by
-    // size) instead of showing them in raw database order, which otherwise
-    // scatters e.g. "Black", "Grey", "Black" across the grid at random.
-    $swatchVariants = $product->variants->filter(fn ($v) => $v->color)->sortBy([['color', 'asc'], ['size', 'asc']])->values();
+    // Shown next to "Variant:" when a swatch is selected, built from the
+    // variant's own color + size when a color is set — falling back to its
+    // name (option_label) when it isn't, since admins often leave color
+    // blank, which used to hide the picker entirely for products (e.g.
+    // bedding sets) that only vary by pattern name and size.
+    $variantGroup = fn ($v) => $v->color ?: $v->option_label;
+    $variantLabel = fn ($v) => collect([$variantGroup($v), $v->size])->filter()->implode(' / ') ?: 'Variant';
+    $defaultSelectionLabel = $defaultVariant ? $variantLabel($defaultVariant) : null;
+    // The swatch grid groups every same-color (or, lacking a color,
+    // same-name) variant together (then by size) instead of showing them in
+    // raw database order, which otherwise scatters e.g. "Black", "Grey",
+    // "Black" across the grid at random.
+    $swatchVariants = $product->variants->sortBy(fn ($v) => [$variantGroup($v), $v->size])->values();
     $variantOptions = $product->variants->map(fn ($v) => [
         'id' => $v->id,
-        'color' => $v->color,
         'label' => $variantLabel($v),
         'in_stock' => $v->stock_status !== 'out_of_stock',
-        // Falls back to a same-color sibling's photo when this variant has
+        // Falls back to a same-group sibling's photo when this variant has
         // none of its own, matching the image shown on its swatch below.
-        'image' => $v->image ?? $product->variants->first(fn ($sibling) => $sibling->color === $v->color && $sibling->image)?->image,
+        'image' => $v->image ?? $product->variants->first(fn ($sibling) => $variantGroup($sibling) === $variantGroup($v) && $sibling->image)?->image,
         'price' => (float) ($v->price ?? $product->price),
     ])->values();
     $defaultPrice = (float) ($defaultVariant?->price ?? $product->price);
@@ -163,29 +159,30 @@
         @csrf
         <input type="hidden" name="product_variant_id" id="selectedVariantId" value="{{ $defaultVariant?->id }}">
 
-        @if ($colors->isNotEmpty())
+        @if ($swatchVariants->isNotEmpty())
           <fieldset class="mb-4">
             <legend class="small fw-semibold mb-2 pdp-option-legend">Variant: <span data-selected-color-label>{{ $defaultSelectionLabel }}</span></legend>
             <div class="d-flex flex-wrap gap-2" data-swatch-group="color">
               {{-- Every variant gets its own thumbnail (not deduplicated by
-                   color) — two variants of the same color but a different
-                   size/model are still a different photo, so shoppers pick
-                   the exact one they want rather than a shared "Black" tile. --}}
+                   color/name) — two variants of the same pattern but a
+                   different size/model are still a different photo, so
+                   shoppers pick the exact one they want rather than a
+                   shared tile. --}}
               @foreach ($swatchVariants as $variant)
                 @php
                   // Falls back to another variant's photo of the same
-                  // color when this exact variant (e.g. a size with no
-                  // photo of its own) wasn't given one — only shows as a
-                  // plain text pill when no variant of that color has any
-                  // photo at all.
+                  // color (or, lacking a color, the same name) when this
+                  // exact variant (e.g. a size with no photo of its own)
+                  // wasn't given one — only shows as a plain text pill
+                  // when no variant of that group has any photo at all.
                   $swatchImage = $variant->image
-                      ?? $product->variants->first(fn ($v) => $v->color === $variant->color && $v->image)?->image;
+                      ?? $product->variants->first(fn ($v) => $variantGroup($v) === $variantGroup($variant) && $v->image)?->image;
                   $swatchLabel = $variantLabel($variant);
                 @endphp
                 @if ($swatchImage)
                   <button type="button" class="swatch-option swatch-color-image @if ($variant->id === $defaultVariant?->id) active @endif"
                           data-variant-id="{{ $variant->id }}"
-                          data-color="{{ $variant->color }}"
+                          data-variant-name="{{ $variant->option_label }}"
                           aria-pressed="{{ $variant->id === $defaultVariant?->id ? 'true' : 'false' }}"
                           aria-label="Variant: {{ $swatchLabel }}">
                     <img src="{{ $swatchImage }}" alt="{{ $swatchLabel }}" loading="lazy" decoding="async">
@@ -193,7 +190,7 @@
                 @else
                   <button type="button" class="swatch-option swatch-color swatch-color--label @if ($variant->id === $defaultVariant?->id) active @endif"
                           data-variant-id="{{ $variant->id }}"
-                          data-color="{{ $variant->color }}"
+                          data-variant-name="{{ $variant->option_label }}"
                           aria-pressed="{{ $variant->id === $defaultVariant?->id ? 'true' : 'false' }}"
                           aria-label="Variant: {{ $swatchLabel }}">{{ $swatchLabel }}</button>
                 @endif
@@ -424,7 +421,7 @@
     function selectVariant(variant) {
       if (!variant) return;
       hiddenInput.value = variant.id;
-      if (selectedColorLabel) selectedColorLabel.textContent = variant.label || variant.color || '';
+      if (selectedColorLabel) selectedColorLabel.textContent = variant.label || '';
       if (submitBtn) submitBtn.disabled = !variant.in_stock;
       if (message) message.textContent = variant.in_stock ? '' : 'This option is sold out — try another.';
       updateGalleryForVariant(variant);
