@@ -358,10 +358,21 @@ class ProductController extends Controller
         $product->load('variants', 'vendorProductCandidate', 'aiScore');
         $categories = Category::with('subcategories')->orderBy('sort_order')->get();
 
+        // Printful/CJ candidates carry variants the admin never ticked at
+        // publish time (identified by matching vendor_sku), which is what
+        // this section is for. AliExpress has no such "pick which ones"
+        // step — every scraped variant is created immediately on import —
+        // and its variants have no vendor_sku to match against anyway, so
+        // there's never anything genuinely left over to offer here. Keyed
+        // off the candidate's own `vendor`, not the product's
+        // `source_vendor`, since that's the field that actually describes
+        // what shape raw_payload is in.
         $usedVendorSkus = $product->variants->pluck('vendor_sku')->filter()->all();
-        $availableVendorVariants = collect($product->vendorProductCandidate?->raw_payload['variants'] ?? [])
-            ->reject(fn ($variant) => in_array($variant['vendor_sku'] ?? null, $usedVendorSkus, true))
-            ->values();
+        $availableVendorVariants = in_array($product->vendorProductCandidate?->vendor, ['printful', 'cj'], true)
+            ? collect($product->vendorProductCandidate?->raw_payload['variants'] ?? [])
+                ->reject(fn ($variant) => in_array($variant['vendor_sku'] ?? null, $usedVendorSkus, true))
+                ->values()
+            : collect();
 
         $designPlacements = $product->source_vendor === 'printful' && $product->vendorProductCandidate
             ? $this->printful->getPrintfileTemplate($product->vendorProductCandidate->vendor_external_id)

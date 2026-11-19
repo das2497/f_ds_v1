@@ -79,4 +79,62 @@ class ProductEditPageTest extends TestCase
         $response->assertOk();
         $response->assertSee('Blonde Wig');
     }
+
+    /**
+     * Regression test: AliExpress imports every scraped variant
+     * immediately (there's no "tick which ones to list" step like
+     * Printful/CJ candidates go through), and its variants never carry a
+     * vendor_sku. The "Add More Variants" section used to match on
+     * vendor_sku to figure out what's already been added — which always
+     * matched nothing for AliExpress, so a variant already live on the
+     * product kept showing up a second time as something "available to
+     * add".
+     */
+    public function test_an_aliexpress_products_already_added_variant_is_not_offered_again(): void
+    {
+        $admin = $this->admin();
+
+        $candidate = VendorProductCandidate::create([
+            'vendor' => 'aliexpress',
+            'vendor_external_id' => '1005006260949497',
+            'raw_payload' => [
+                'vendor_external_id' => '1005006260949497',
+                'title' => 'Blonde Wig',
+                'variants' => [
+                    ['option_label' => 'White', 'color' => 'White', 'image' => null, 'cost_price' => 12.5],
+                    ['option_label' => 'Black', 'color' => 'Black', 'image' => null, 'cost_price' => 12.5],
+                ],
+            ],
+            'title' => 'Blonde Wig',
+            'base_cost' => 12.5,
+            'variant_count' => 2,
+            'status' => 'listed',
+        ]);
+
+        $product = Product::create([
+            'vendor_product_candidate_id' => $candidate->id,
+            'source_vendor' => 'aliexpress',
+            'title' => 'Blonde Wig',
+            'slug' => 'blonde-wig',
+            'price' => 12.5,
+            'images' => [],
+            'is_active' => false,
+        ]);
+
+        foreach (['White', 'Black'] as $i => $label) {
+            $product->variants()->create([
+                'sku' => 'ALI-1005006260949497-'.($i + 1),
+                'option_label' => $label,
+                'color' => $label,
+                'cost_price' => 12.5,
+                'stock_status' => 'in_stock',
+                'is_active' => true,
+            ]);
+        }
+
+        $response = $this->actingAs($admin)->get(route('admin.products.edit', $product));
+
+        $response->assertOk();
+        $response->assertDontSee('Add More Variants');
+    }
 }
