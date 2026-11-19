@@ -189,4 +189,13 @@
 
         <button type="submit" class="btn btn-accent">Save Changes</button>
     </form>
+
+    <div class="table-admin p-4 mb-3">
+        <h6 class="mb-3"><i class="bi bi-arrow-repeat me-2 text-accent"></i>Google Sheets Backfill</h6>
+        <div class="small text-muted-slate mb-3">New products/variants sync to the Sheet automatically as they're created or edited. Products that already existed before Sheets sync was configured won't appear on their own — run this once after setting it up above (safe to re-run anytime).</div>
+        <form action="{{ route('admin.settings-gateways.google-sheets-backfill') }}" method="POST">
+            @csrf
+            <button type="submit" class="btn btn-outline-secondary btn-sm">Push existing products &amp; variants to the Sheet now</button>
+        </form>
+    </div>
 </x-admin-layout>

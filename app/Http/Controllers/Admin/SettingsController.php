@@ -7,6 +7,7 @@ use App\Models\AppSetting;
 use App\Models\AuditLog;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
 
@@ -108,5 +109,17 @@ class SettingsController extends Controller
         }
 
         return back()->with('status', $changed ? 'Gateway settings updated.' : 'No changes submitted.');
+    }
+
+    public function backfillGoogleSheets(): RedirectResponse
+    {
+        set_time_limit(300);
+
+        Artisan::call('sheets:backfill');
+        $output = trim(Artisan::output());
+
+        AuditLog::record('Google Sheets Backfill Run', $output);
+
+        return back()->with('status', $output ?: 'Backfill finished.');
     }
 }

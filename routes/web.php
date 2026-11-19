@@ -206,6 +206,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:super-admin'])
 
     Route::get('/settings-gateways', [AdminSettingsController::class, 'index'])->name('settings-gateways');
     Route::put('/settings-gateways', [AdminSettingsController::class, 'update'])->name('settings-gateways.update');
+    Route::post('/settings-gateways/google-sheets-backfill', [AdminSettingsController::class, 'backfillGoogleSheets'])->name('settings-gateways.google-sheets-backfill');
 
     Route::get('/audit-logs', [AdminAuditLogController::class, 'index'])->name('audit-logs');
 
