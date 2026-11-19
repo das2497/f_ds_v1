@@ -5,16 +5,19 @@ namespace App\Services\GoogleSheets;
 use App\Models\AppSetting;
 use App\Models\Product;
 use App\Models\ProductVariant;
-use Google\Client as GoogleClient;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use RuntimeException;
 
 /**
  * Pushes Product/ProductVariant rows to a Google Sheet (one tab per model)
- * via the raw Sheets v4 REST API. google/apiclient is only used for the
- * service-account JWT exchange — the generated google/apiclient-services
- * classes are never touched, so this stays lightweight and testable with
- * Http::fake() like the other Vendor services.
+ * via the raw Sheets v4 REST API. The service-account JWT bearer token
+ * (RFC 7523) is signed by hand with PHP's own openssl extension instead
+ * of pulling in google/apiclient: that package drags in
+ * google/apiclient-services, a ~38,000-file generated-code package that
+ * blew past this app's shared-hosting composer install limits on deploy.
+ * Plain PHP + the Http facade keeps this testable with Http::fake() like
+ * the other Vendor services, with zero extra dependencies.
  */
 class GoogleSheetsService
 {
@@ -208,12 +211,55 @@ class GoogleSheetsService
     private function accessToken(): string
     {
         return Cache::remember('google_sheets_access_token', 3000, function () {
-            $client = new GoogleClient;
-            $client->setAuthConfig($this->credentialsConfig());
-            $client->addScope('https://www.googleapis.com/auth/spreadsheets');
+            $credentials = $this->credentialsConfig();
 
-            return $client->fetchAccessTokenWithAssertion()['access_token'];
+            if ($credentials === null) {
+                throw new RuntimeException('Google Sheets credentials are not configured.');
+            }
+
+            $response = Http::asForm()->post('https://oauth2.googleapis.com/token', [
+                'grant_type' => 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+                'assertion' => $this->signedJwt($credentials),
+            ])->throw();
+
+            return $response->json('access_token');
         });
+    }
+
+    /**
+     * Hand-signs the service-account JWT bearer assertion Google's token
+     * endpoint expects (RFC 7523) — see the class docblock for why this
+     * isn't done via google/apiclient.
+     *
+     * @param  array<string, mixed>  $credentials  the decoded service account JSON
+     */
+    private function signedJwt(array $credentials): string
+    {
+        $now = time();
+
+        $header = $this->base64UrlEncode(json_encode(['alg' => 'RS256', 'typ' => 'JWT']));
+        $claims = $this->base64UrlEncode(json_encode([
+            'iss' => $credentials['client_email'],
+            'scope' => 'https://www.googleapis.com/auth/spreadsheets',
+            'aud' => 'https://oauth2.googleapis.com/token',
+            'iat' => $now,
+            'exp' => $now + 3600,
+        ]));
+
+        $privateKey = openssl_pkey_get_private($credentials['private_key']);
+
+        if ($privateKey === false) {
+            throw new RuntimeException('Google Sheets service account private key is invalid.');
+        }
+
+        openssl_sign("{$header}.{$claims}", $signature, $privateKey, OPENSSL_ALGO_SHA256);
+
+        return "{$header}.{$claims}.".$this->base64UrlEncode($signature);
+    }
+
+    private function base64UrlEncode(string $data): string
+    {
+        return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
     }
 
     private function spreadsheetId(): ?string
@@ -225,25 +271,27 @@ class GoogleSheetsService
      * The admin panel (Super Admin > Gateway Settings) lets an admin paste
      * the service account's JSON key directly — that always wins. Falling
      * back to a file on disk (GOOGLE_SHEETS_CREDENTIALS_PATH) only matters
-     * for a server set up before that panel existed, or one provisioned
-     * straight from .env instead.
+     * for a server provisioned straight from .env instead of the panel.
      *
-     * @return array<string, mixed>|string|null what google/apiclient's
-     *                                          Client::setAuthConfig() accepts — a decoded JSON array or a
-     *                                          path to the key file.
+     * @return array<string, mixed>|null the decoded service account JSON
      */
-    private function credentialsConfig(): array|string|null
+    private function credentialsConfig(): ?array
     {
         $json = AppSetting::get('google_sheets.credentials_json');
 
-        if (filled($json)) {
-            $decoded = json_decode($json, true);
-
-            return is_array($decoded) ? $decoded : null;
+        if (blank($json)) {
+            $path = config('services.google_sheets.credentials_path');
+            $json = $path && is_file(base_path($path)) ? file_get_contents(base_path($path)) : null;
         }
 
-        $path = config('services.google_sheets.credentials_path');
+        if (blank($json)) {
+            return null;
+        }
 
-        return $path && is_file(base_path($path)) ? base_path($path) : null;
+        $decoded = json_decode($json, true);
+
+        return is_array($decoded) && filled($decoded['private_key'] ?? null) && filled($decoded['client_email'] ?? null)
+            ? $decoded
+            : null;
     }
 }
