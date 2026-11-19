@@ -132,7 +132,7 @@ class GoogleSheetsService
      */
     private function findRow(string $sheet, int $id): ?int
     {
-        $column = $this->http()->get($this->valuesUrl("{$sheet}!A:A"))->json('values', []);
+        $column = $this->http()->get($this->readValuesUrl("{$sheet}!A:A"))->json('values', []);
 
         foreach ($column as $index => $cell) {
             if ((string) ($cell[0] ?? '') === (string) $id) {
@@ -166,7 +166,7 @@ class GoogleSheetsService
             $this->sheetMeta = null;
         }
 
-        $headerRow = $this->http()->get($this->valuesUrl("{$sheet}!1:1"))->json('values.0', []);
+        $headerRow = $this->http()->get($this->readValuesUrl("{$sheet}!1:1"))->json('values.0', []);
 
         if ($headerRow !== $headers) {
             $this->http()->put($this->valuesUrl("{$sheet}!A1"), ['values' => [$headers]]);
@@ -198,6 +198,16 @@ class GoogleSheetsService
     private function url(string $path = ''): string
     {
         return self::BASE_URL.'/'.$this->spreadsheetId().$path;
+    }
+
+    /**
+     * Plain spreadsheets.values.get URL — no `valueInputOption` query
+     * param, since that option only exists on the write endpoints
+     * (update/append) and Google's API 400s on an unrecognized param.
+     */
+    private function readValuesUrl(string $range): string
+    {
+        return $this->url('/values/'.rawurlencode($range));
     }
 
     private function valuesUrl(string $range, bool $append = false): string
