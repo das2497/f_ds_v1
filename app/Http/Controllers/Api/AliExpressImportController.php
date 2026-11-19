@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Admin\PricingSettingsController;
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use App\Models\Product;
@@ -68,7 +69,10 @@ class AliExpressImportController extends Controller
             return response()->json(['status' => 'exists', 'product_id' => $existing->id]);
         }
 
-        $product = DB::transaction(function () use ($validated, $candidate) {
+        $profitMarginPercent = PricingSettingsController::profitMarginPercent();
+        $suggestedPrice = fn (float $cost) => round($cost * (1 + $profitMarginPercent / 100), 2);
+
+        $product = DB::transaction(function () use ($validated, $candidate, $suggestedPrice) {
             $imageUrls = collect($validated['images'] ?? [$validated['preview_image_url'] ?? null])
                 ->filter()
                 ->unique()
@@ -84,7 +88,7 @@ class AliExpressImportController extends Controller
                 'title' => $validated['title'],
                 'slug' => $this->uniqueSlug($validated['title']),
                 'description' => DescriptionSanitizer::sanitize($validated['description'] ?? null),
-                'price' => collect($validated['variants'])->min('cost_price'),
+                'price' => $suggestedPrice((float) collect($validated['variants'])->min('cost_price')),
                 'images' => $imageUrls,
                 'is_active' => false,
             ]);
@@ -99,6 +103,7 @@ class AliExpressImportController extends Controller
                     'size' => $variant['size'] ?? null,
                     'weight_lb' => $variant['weight_lb'] ?? null,
                     'cost_price' => $variant['cost_price'],
+                    'price' => $suggestedPrice((float) $variant['cost_price']),
                     'stock_status' => 'in_stock',
                     'is_active' => true,
                 ]);

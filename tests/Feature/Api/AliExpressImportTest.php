@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Api;
 
+use App\Models\AppSetting;
 use App\Models\Product;
 use App\Models\VendorProductCandidate;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -55,15 +56,41 @@ class AliExpressImportTest extends TestCase
         $this->assertFalse($product->is_active);
         $this->assertSame('aliexpress', $product->source_vendor);
         $this->assertSame('https://www.aliexpress.com/item/1005006123456789.html', $product->source_url);
-        $this->assertSame('8.50', (string) $product->price);
+        // Default profit margin is 150% (cost * 2.5) — see PricingSettingsController.
+        $this->assertSame('21.25', (string) $product->price);
         $this->assertCount(2, $product->variants);
         $this->assertTrue($product->variants->every(fn ($variant) => $variant->is_active));
+        $this->assertTrue($product->variants->every(fn ($variant) => (string) $variant->price === '21.25'));
 
         $candidate = VendorProductCandidate::where('vendor', 'aliexpress')
             ->where('vendor_external_id', '1005006123456789')
             ->firstOrFail();
         $this->assertSame('listed', $candidate->status);
         $this->assertSame($candidate->id, $product->vendor_product_candidate_id);
+    }
+
+    public function test_each_variant_price_is_computed_from_its_own_cost_using_the_configured_margin(): void
+    {
+        AppSetting::set('pricing.profit_margin_percent', 80);
+
+        $response = $this->postJson('/api/aliexpress/products', $this->payload([
+            'variants' => [
+                ['option_label' => 'Small', 'size' => 'S', 'cost_price' => 10],
+                ['option_label' => 'Large', 'size' => 'L', 'cost_price' => 20],
+            ],
+        ]), [
+            'Authorization' => 'Bearer test-extension-token',
+        ]);
+
+        $response->assertCreated();
+
+        $product = Product::where('title', 'Wireless Earbuds')->firstOrFail();
+        // 80% margin: min cost 10 -> product price 18.00; each variant priced off its own cost.
+        $this->assertSame('18.00', (string) $product->price);
+        $small = $product->variants->firstWhere('option_label', 'Small');
+        $large = $product->variants->firstWhere('option_label', 'Large');
+        $this->assertSame('18.00', (string) $small->price);
+        $this->assertSame('36.00', (string) $large->price);
     }
 
     public function test_reimporting_the_same_external_id_does_not_duplicate_the_product(): void
