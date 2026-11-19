@@ -10,6 +10,7 @@ use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Sleep;
 use Tests\TestCase;
 
 class GoogleSheetsBackfillTest extends TestCase
@@ -155,6 +156,36 @@ class GoogleSheetsBackfillTest extends TestCase
         });
 
         Http::assertNotSent(fn ($request) => str_contains($request->url(), 'Products') && str_contains($request->url(), ':append'));
+    }
+
+    public function test_a_transient_quota_error_is_retried_and_recovers(): void
+    {
+        Sleep::fake();
+
+        $this->productWithVariants('Retried Product');
+
+        $this->configureSheets();
+
+        Http::fake([
+            'oauth2.googleapis.com/*' => Http::response(['access_token' => 'fake-token']),
+            '*fields=sheets.properties*' => Http::sequence()
+                ->push(['error' => ['code' => 429, 'message' => 'Quota exceeded for quota metric...']], 429)
+                ->whenEmpty(Http::response(['sheets' => [
+                    ['properties' => ['sheetId' => 1, 'title' => GoogleSheetsService::PRODUCTS_SHEET]],
+                    ['properties' => ['sheetId' => 2, 'title' => GoogleSheetsService::VARIANTS_SHEET]],
+                ]])),
+            '*values/Products%211%3A1*' => Http::response(['values' => [GoogleSheetsService::PRODUCT_HEADERS]]),
+            '*values/Variants%211%3A1*' => Http::response(['values' => [GoogleSheetsService::VARIANT_HEADERS]]),
+            '*values/Products%21A%3AA*' => Http::response(['values' => []]),
+            '*values/Variants%21A%3AA*' => Http::response(['values' => []]),
+            '*values:batchUpdate*' => Http::response(['totalUpdatedRows' => 0]),
+            '*:append*' => Http::response(['updates' => []]),
+        ]);
+
+        $exitCode = Artisan::call('sheets:backfill');
+
+        $this->assertSame(0, $exitCode);
+        $this->assertStringContainsString('Pushed 1 products and 1 variants', Artisan::output());
     }
 
     public function test_a_super_admin_can_trigger_the_backfill_from_the_settings_page(): void

@@ -5,9 +5,11 @@ namespace App\Services\GoogleSheets;
 use App\Models\AppSetting;
 use App\Models\Product;
 use App\Models\ProductVariant;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
+use Throwable;
 
 /**
  * Pushes Product/ProductVariant rows to a Google Sheet (one tab per model)
@@ -319,9 +321,24 @@ class GoogleSheetsService
         ])->all();
     }
 
+    /**
+     * A 429 from Google here means its (often quite low, default-tier)
+     * per-minute Sheets API quota is momentarily exhausted — usually from
+     * a just-prior failed attempt or someone re-clicking "Backfill"
+     * before the window reset, not a code bug. Retrying with backoff
+     * lets a run ride that out instead of failing outright; three misses
+     * in a row (quota still exhausted after ~12s) is treated as a real
+     * failure and surfaces normally.
+     */
     private function http()
     {
-        return Http::withToken($this->accessToken())->timeout(15)->throw();
+        return Http::withToken($this->accessToken())
+            ->timeout(15)
+            ->retry(3, fn (int $attempt) => $attempt * 2000, function (Throwable $exception) {
+                return $exception instanceof RequestException
+                    && $exception->response->status() === 429;
+            })
+            ->throw();
     }
 
     private function url(string $path = ''): string
