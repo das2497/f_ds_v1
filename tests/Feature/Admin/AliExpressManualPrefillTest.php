@@ -136,4 +136,40 @@ class AliExpressManualPrefillTest extends TestCase
         $this->assertNull($product->source_url);
         $this->assertNotEmpty($product->images);
     }
+
+    /**
+     * Regression test: a real AliExpress product URL carries a tracking
+     * query string (algo_pvid, pdp_npi, utparam-url, ...) that routinely
+     * runs past 500 characters — pasting one straight from the browser's
+     * address bar into this field used to fail "must not be greater than
+     * 500 characters" even though the link itself was perfectly valid.
+     */
+    public function test_manual_product_creation_accepts_a_long_tracking_style_source_url(): void
+    {
+        $category = $this->category();
+
+        $longUrl = 'https://www.aliexpress.com/item/1005010559613267.html?'
+            .'algo_pvid=837154a4-eff3-4bdb-8b21-f2eadb4dcaf4&algo_exp_id=837154a4-eff3-4bdb-8b21-f2eadb4dcaf4-5'
+            .'&pdp_ext_f='.urlencode(json_encode(['order' => '6660', 'spu_best_type' => 'price', 'eval' => '1', 'fromPage' => 'search']))
+            .'&pdp_npi=6%40dis%21LKR%215940.25%212478.53%21%21%21104.88%2143.76%21%40214131cd17951022955981258e0fe8%2112000052812394076%21sea%21LK%210%21ABX%211%210%21n_tag%3A-29910%3Bd%3Affd6c959%3Bm03_new_user%3A-29895%3BpisId%3A5000000221805058'
+            .'&curPageLogUid=AYYTpI94PGw1&utparam-url=scene%3Asearch%7Cquery_from%3A%7Cx_object_id%3A1005010559613267%7C_p_origin_prod%3A';
+
+        $this->assertGreaterThan(500, strlen($longUrl));
+
+        $response = $this->actingAs($this->admin())->post(route('admin.products.store-manual'), [
+            'title' => 'Compression Shirt Long URL',
+            'category_id' => $category->id,
+            'price' => 19.99,
+            'source_url' => $longUrl,
+            'variants' => [
+                ['sku' => 'SHB-SHIRT-2', 'option_label' => 'Red', 'cost_price' => 5.5],
+            ],
+        ]);
+
+        $response->assertRedirect(route('admin.products'));
+        $response->assertSessionDoesntHaveErrors('source_url');
+
+        $product = Product::where('title', 'Compression Shirt Long URL')->firstOrFail();
+        $this->assertSame($longUrl, $product->source_url);
+    }
 }

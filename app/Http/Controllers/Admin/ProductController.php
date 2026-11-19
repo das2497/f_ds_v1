@@ -155,7 +155,7 @@ class ProductController extends Controller
             'price' => ['required', 'numeric', 'min:0'],
             'compare_at_price' => ['nullable', 'numeric', 'min:0'],
             'is_active' => ['nullable', 'boolean'],
-            'source_url' => ['nullable', 'string', 'max:500'],
+            'source_url' => ['nullable', 'string', 'max:2048'],
             // Images fetched from a source link (e.g. via the "Fetch from
             // AliExpress" button) arrive as already-hosted URLs here,
             // alongside whatever the admin uploads directly — merged the

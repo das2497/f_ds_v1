@@ -111,6 +111,12 @@ function scrapeAliExpressProduct() {
     || (location.pathname.match(/(\d{6,})/) || [])[1]
     || String(Date.now());
 
+  // location.href carries AliExpress's own tracking query string (algo_pvid,
+  // pdp_npi, utparam-url, ...), which is routinely 500-1000+ characters and
+  // irrelevant to actually viewing the product — the canonical /item/{id}.html
+  // link works identically and stays short enough to store and display sanely.
+  const sourceUrl = location.origin + '/item/' + vendorExternalId + '.html';
+
   return {
     vendor_external_id: vendorExternalId,
     title,
@@ -118,6 +124,6 @@ function scrapeAliExpressProduct() {
     preview_image_url: images[0] || null,
     images,
     variants,
-    source_url: location.href,
+    source_url: sourceUrl,
   };
 }

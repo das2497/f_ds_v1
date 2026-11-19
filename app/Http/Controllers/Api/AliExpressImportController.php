@@ -33,7 +33,7 @@ class AliExpressImportController extends Controller
             'vendor_external_id' => ['required', 'string', 'max:255'],
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
-            'source_url' => ['nullable', 'string', 'max:500'],
+            'source_url' => ['nullable', 'string', 'max:2048'],
             'preview_image_url' => ['nullable', 'string'],
             'images' => ['nullable', 'array'],
             'images.*' => ['string'],
