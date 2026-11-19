@@ -5,6 +5,8 @@ namespace App\Providers;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductVariant;
+use App\Models\Subcategory;
+use App\Observers\CategorySheetObserver;
 use App\Observers\ProductSheetObserver;
 use App\Observers\ProductVariantSheetObserver;
 use App\Services\Cart\CartResolver;
@@ -31,6 +33,8 @@ class AppServiceProvider extends ServiceProvider
 
         Product::observe(ProductSheetObserver::class);
         ProductVariant::observe(ProductVariantSheetObserver::class);
+        Category::observe(CategorySheetObserver::class);
+        Subcategory::observe(CategorySheetObserver::class);
 
         View::composer(['partials.store-header', 'partials.store-mega-nav', 'partials.store-footer', 'store.home'], function ($view) {
             $view->with(

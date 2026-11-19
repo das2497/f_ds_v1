@@ -3,6 +3,7 @@
 namespace App\Services\GoogleSheets;
 
 use App\Models\AppSetting;
+use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use Illuminate\Http\Client\RequestException;
@@ -37,6 +38,11 @@ class GoogleSheetsService
     public const PRODUCTS_SHEET = 'Products';
 
     public const VARIANTS_SHEET = 'Variants';
+
+    /** Hidden lookup tab backing the Products sheet's Category/Subcategory dropdowns. */
+    public const CATEGORIES_SHEET = 'Categories';
+
+    public const CATEGORY_LOOKUP_HEADERS = ['Category', 'Subcategory'];
 
     // Category/Subcategory/Source URL are appended at the end rather than
     // inserted among the original columns, so rows already synced before
@@ -113,6 +119,40 @@ class GoogleSheetsService
         }
 
         $this->bulkUpsert(self::VARIANTS_SHEET, self::VARIANT_HEADERS, $rows);
+    }
+
+    /**
+     * Rebuilds the hidden "Categories" lookup tab from every
+     * Category/Subcategory in the DB, and points the Products sheet's
+     * Category/Subcategory columns at it as a dropdown (Data Validation)
+     * — so an admin picks a real category/subcategory instead of typing
+     * one in free-hand and relying on SheetWebhookController to catch a
+     * typo after the fact. The list is advisory, not a hard lock
+     * (`strict: false`): a value outside it is still accepted into the
+     * cell and still goes through the same server-side validation as
+     * before, so a lookup tab that's gone briefly stale never blocks an
+     * edit outright.
+     */
+    public function syncCategoryLookup(): void
+    {
+        $this->createSheetIfMissing(self::CATEGORIES_SHEET, hidden: true);
+
+        $pairs = Category::with(['subcategories' => fn ($q) => $q->orderBy('sort_order')])
+            ->orderBy('sort_order')
+            ->get()
+            ->flatMap(fn ($category) => $category->subcategories->isEmpty()
+                ? [[$category->name, '']]
+                : $category->subcategories->map(fn ($sub) => [$category->name, $sub->name])->all()
+            )
+            ->values()
+            ->all();
+
+        $this->clearSheetValues(self::CATEGORIES_SHEET);
+        $this->http()->put($this->valuesUrl(self::CATEGORIES_SHEET.'!A1'), [
+            'values' => array_merge([self::CATEGORY_LOOKUP_HEADERS], $pairs),
+        ]);
+
+        $this->applyCategoryDropdowns(count($pairs));
     }
 
     /**
@@ -296,12 +336,7 @@ class GoogleSheetsService
             return;
         }
 
-        if ($this->sheetId($sheet) === null) {
-            $this->http()->post($this->url(':batchUpdate'), [
-                'requests' => [['addSheet' => ['properties' => ['title' => $sheet]]]],
-            ]);
-            $this->sheetMeta = null;
-        }
+        $this->createSheetIfMissing($sheet);
 
         $headerRow = $this->http()->get($this->readValuesUrl("{$sheet}!1:1"))->json('values.0', []);
 
@@ -310,6 +345,77 @@ class GoogleSheetsService
         }
 
         $this->headerChecked[$sheet] = true;
+    }
+
+    private function createSheetIfMissing(string $sheet, bool $hidden = false): void
+    {
+        if ($this->sheetId($sheet) !== null) {
+            return;
+        }
+
+        $properties = ['title' => $sheet];
+        if ($hidden) {
+            $properties['hidden'] = true;
+        }
+
+        $this->http()->post($this->url(':batchUpdate'), [
+            'requests' => [['addSheet' => ['properties' => $properties]]],
+        ]);
+        $this->sheetMeta = null;
+    }
+
+    private function clearSheetValues(string $sheet): void
+    {
+        $this->http()->post($this->url('/values/'.rawurlencode("{$sheet}!A:Z").':clear'), []);
+    }
+
+    /**
+     * Points the Products sheet's Category/Subcategory columns at the
+     * Categories lookup tab's two columns as a dropdown list. Column
+     * positions are looked up from PRODUCT_HEADERS rather than hardcoded,
+     * so reordering those headers can't silently misalign this.
+     */
+    private function applyCategoryDropdowns(int $lookupRowCount): void
+    {
+        $productsSheetId = $this->sheetId(self::PRODUCTS_SHEET);
+
+        if ($productsSheetId === null) {
+            return;
+        }
+
+        $categoryColumn = array_search('Category', self::PRODUCT_HEADERS, true);
+        $subcategoryColumn = array_search('Subcategory', self::PRODUCT_HEADERS, true);
+        // +1 for the lookup tab's own header row; floored at 2 so an empty
+        // category list still produces a valid (if empty) range instead of
+        // an end-before-start one Google's API would reject.
+        $lastLookupRow = max(2, $lookupRowCount + 1);
+
+        $validationRequest = fn (int $column, string $lookupColumnLetter) => [
+            'setDataValidation' => [
+                'range' => [
+                    'sheetId' => $productsSheetId,
+                    'startRowIndex' => 1,
+                    'endRowIndex' => 20000,
+                    'startColumnIndex' => $column,
+                    'endColumnIndex' => $column + 1,
+                ],
+                'rule' => [
+                    'condition' => [
+                        'type' => 'ONE_OF_RANGE',
+                        'values' => [['userEnteredValue' => '='.self::CATEGORIES_SHEET."!\${$lookupColumnLetter}\$2:\${$lookupColumnLetter}\${$lastLookupRow}"]],
+                    ],
+                    'showCustomUi' => true,
+                    'strict' => false,
+                ],
+            ],
+        ];
+
+        $this->http()->post($this->url(':batchUpdate'), [
+            'requests' => [
+                $validationRequest($categoryColumn, 'A'),
+                $validationRequest($subcategoryColumn, 'B'),
+            ],
+        ]);
     }
 
     /**

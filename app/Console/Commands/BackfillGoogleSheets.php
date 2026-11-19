@@ -28,6 +28,11 @@ class BackfillGoogleSheets extends Command
             return self::FAILURE;
         }
 
+        // Builds the Category/Subcategory dropdown on the Products sheet —
+        // done first so it's in place before any product rows land, though
+        // the dropdown applies to the whole column either way.
+        $sheets->syncCategoryLookup();
+
         // Each chunk goes out as one or two batched write calls (see
         // GoogleSheetsService::bulkUpsert*()) instead of one API call per
         // row — a one-call-per-row backfill blows through Google's

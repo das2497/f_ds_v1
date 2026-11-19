@@ -41,6 +41,7 @@ class GoogleSheetsBackfillTest extends TestCase
             '*fields=sheets.properties*' => Http::response(['sheets' => [
                 ['properties' => ['sheetId' => 1, 'title' => GoogleSheetsService::PRODUCTS_SHEET]],
                 ['properties' => ['sheetId' => 2, 'title' => GoogleSheetsService::VARIANTS_SHEET]],
+                ['properties' => ['sheetId' => 3, 'title' => GoogleSheetsService::CATEGORIES_SHEET]],
             ]]),
             '*values/Products%211%3A1*' => Http::response(['values' => [GoogleSheetsService::PRODUCT_HEADERS]]),
             '*values/Variants%211%3A1*' => Http::response(['values' => [GoogleSheetsService::VARIANT_HEADERS]]),
@@ -48,6 +49,11 @@ class GoogleSheetsBackfillTest extends TestCase
             '*values/Variants%21A%3AA*' => Http::response(['values' => []]),
             '*values:batchUpdate*' => Http::response(['totalUpdatedRows' => 0]),
             '*:append*' => Http::response(['updates' => []]),
+            // Category lookup tab: clear + rewrite, and the subsequent
+            // dropdown setDataValidation batchUpdate on the spreadsheet
+            // itself (a different endpoint from the values:batchUpdate
+            // used for bulk row writes above).
+            '*' => Http::response(['ok' => true]),
         ]);
     }
 
@@ -115,9 +121,10 @@ class GoogleSheetsBackfillTest extends TestCase
         // Before batching, 30 products + 30 variants each needed their own
         // header-check + column-read + write call — 100+ requests. Batched,
         // it should be a small, roughly-constant handful regardless of
-        // catalog size, which is what keeps this under Google's per-minute
-        // Sheets API quota.
-        $this->assertLessThanOrEqual(10, count(Http::recorded()));
+        // catalog size (plus a fixed few more for the category lookup
+        // sync, also O(1) in catalog size), which is what keeps this
+        // under Google's per-minute Sheets API quota.
+        $this->assertLessThanOrEqual(15, count(Http::recorded()));
     }
 
     public function test_an_existing_row_is_updated_via_batch_update_instead_of_appended_again(): void
@@ -134,6 +141,7 @@ class GoogleSheetsBackfillTest extends TestCase
             '*fields=sheets.properties*' => Http::response(['sheets' => [
                 ['properties' => ['sheetId' => 1, 'title' => GoogleSheetsService::PRODUCTS_SHEET]],
                 ['properties' => ['sheetId' => 2, 'title' => GoogleSheetsService::VARIANTS_SHEET]],
+                ['properties' => ['sheetId' => 3, 'title' => GoogleSheetsService::CATEGORIES_SHEET]],
             ]]),
             '*values/Products%211%3A1*' => Http::response(['values' => [GoogleSheetsService::PRODUCT_HEADERS]]),
             '*values/Variants%211%3A1*' => Http::response(['values' => [GoogleSheetsService::VARIANT_HEADERS]]),
@@ -141,6 +149,7 @@ class GoogleSheetsBackfillTest extends TestCase
             '*values/Variants%21A%3AA*' => Http::response(['values' => [['ID'], [(string) $variant->id]]]),
             '*values:batchUpdate*' => Http::response(['totalUpdatedRows' => 1]),
             '*:append*' => Http::response(['updates' => []]),
+            '*' => Http::response(['ok' => true]),
         ]);
 
         Artisan::call('sheets:backfill');
@@ -173,6 +182,7 @@ class GoogleSheetsBackfillTest extends TestCase
                 ->whenEmpty(Http::response(['sheets' => [
                     ['properties' => ['sheetId' => 1, 'title' => GoogleSheetsService::PRODUCTS_SHEET]],
                     ['properties' => ['sheetId' => 2, 'title' => GoogleSheetsService::VARIANTS_SHEET]],
+                    ['properties' => ['sheetId' => 3, 'title' => GoogleSheetsService::CATEGORIES_SHEET]],
                 ]])),
             '*values/Products%211%3A1*' => Http::response(['values' => [GoogleSheetsService::PRODUCT_HEADERS]]),
             '*values/Variants%211%3A1*' => Http::response(['values' => [GoogleSheetsService::VARIANT_HEADERS]]),
@@ -180,6 +190,7 @@ class GoogleSheetsBackfillTest extends TestCase
             '*values/Variants%21A%3AA*' => Http::response(['values' => []]),
             '*values:batchUpdate*' => Http::response(['totalUpdatedRows' => 0]),
             '*:append*' => Http::response(['updates' => []]),
+            '*' => Http::response(['ok' => true]),
         ]);
 
         $exitCode = Artisan::call('sheets:backfill');
