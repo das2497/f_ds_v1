@@ -80,6 +80,22 @@ class GoogleSheetsCategoryLookupTest extends TestCase
         });
     }
 
+    /**
+     * Regression test: posting an empty PHP array as the clear call's
+     * body json_encodes to "[]" (a JSON array), but Google's API requires
+     * a JSON *object* body for this endpoint and 400s on anything else
+     * ("Root element must be a message, instead found an array").
+     */
+    public function test_clearing_the_lookup_sheet_sends_an_empty_json_object_not_an_array(): void
+    {
+        $this->configureSheets();
+        $this->fakeSheetsApi();
+
+        Category::create(['name' => 'Toys & Games', 'slug' => 'toys-games']);
+
+        Http::assertSent(fn ($request) => str_contains($request->url(), ':clear') && $request->body() === '{}');
+    }
+
     public function test_saving_a_category_triggers_a_sheet_sync(): void
     {
         $this->configureSheets();

@@ -364,9 +364,19 @@ class GoogleSheetsService
         $this->sheetMeta = null;
     }
 
+    /**
+     * Posting an empty PHP array as the body json_encodes to "[]" — a
+     * JSON array — but this endpoint requires a JSON *object* body (even
+     * though it takes no parameters), and 400s on anything else
+     * ("Root element must be a message, instead found an array").
+     * withBody() sends the literal "{}" instead of letting post()'s
+     * normal array-to-JSON encoding produce the wrong shape.
+     */
     private function clearSheetValues(string $sheet): void
     {
-        $this->http()->post($this->url('/values/'.rawurlencode("{$sheet}!A:Z").':clear'), []);
+        $this->http()
+            ->withBody('{}', 'application/json')
+            ->post($this->url('/values/'.rawurlencode("{$sheet}!A:Z").':clear'));
     }
 
     /**
