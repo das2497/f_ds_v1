@@ -95,6 +95,49 @@
         </div>
 
         <div class="table-admin p-4 mb-3">
+            <h6 class="mb-3"><i class="bi bi-file-earmark-spreadsheet me-2 text-accent"></i>Google Sheets Sync (Products &amp; Variants)</h6>
+            <div class="small text-muted-slate mb-3">
+                Mirrors every product/variant to a Google Sheet, and applies hand-edits made there back into the store.
+                Create a service account with the Sheets API enabled in <a href="https://console.cloud.google.com/iam-admin/serviceaccounts" target="_blank" rel="noopener">Google Cloud Console</a>,
+                download its JSON key and paste it below, then share the target spreadsheet with that service account's email (Editor access).
+            </div>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label small">Spreadsheet ID</label>
+                    <input type="text" name="google_sheets_spreadsheet_id" class="form-control" value="{{ old('google_sheets_spreadsheet_id', $settings['google_sheets.spreadsheet_id']) }}" placeholder="the long id in the sheet's URL">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label small">Sync Token</label>
+                    <div class="input-group">
+                        <input type="text" id="sheetsSyncToken" name="google_sheets_sync_token" class="form-control" value="{{ old('google_sheets_sync_token', $settings['google_sheets.sync_token']) }}" placeholder="any random string">
+                        <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('sheetsSyncToken').value = crypto.randomUUID()">Generate</button>
+                    </div>
+                    <div class="form-text">Also paste this exact value as <code>WEBHOOK_TOKEN</code> in the Sheet's Apps Script (Script Properties) — see <code>resources/google-apps-script/sheet-sync.gs</code>.</div>
+                </div>
+                <div class="col-12">
+                    <label class="form-label small">Service Account JSON</label>
+                    <textarea name="google_sheets_credentials_json" class="form-control" rows="4" placeholder="{{ $settings['google_sheets.credentials_json'] ? 'A key is saved — paste a new one to replace it.' : '{ "type": "service_account", "client_email": "...", "private_key": "...", ... }' }}"></textarea>
+                    <div class="form-text">Left blank keeps the currently saved key. Paste the full downloaded JSON file's contents to replace it.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-admin p-4 mb-3">
+            <h6 class="mb-3"><i class="bi bi-cart-plus me-2 text-accent"></i>AliExpress Importer (Chrome Extension)</h6>
+            <div class="small text-muted-slate mb-3">Lets the one-click Chrome extension (<code>resources/chrome-extension/aliexpress-importer</code>) send a scraped product straight into the store as an Inactive product/variant set, pending review.</div>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label small">Extension Token</label>
+                    <div class="input-group">
+                        <input type="text" id="aliexpressToken" name="aliexpress_extension_token" class="form-control" value="{{ old('aliexpress_extension_token', $settings['aliexpress_extension.token']) }}" placeholder="any random string">
+                        <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('aliexpressToken').value = crypto.randomUUID()">Generate</button>
+                    </div>
+                    <div class="form-text">Paste this exact value into the extension's "Store settings" panel, along with this site's URL.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-admin p-4 mb-3">
             <h6 class="mb-3"><i class="bi bi-graph-up-arrow me-2 text-accent"></i>Marketing Attribution (server-side conversion events)</h6>
             <div class="small text-muted-slate mb-3">Optional — every service below no-ops safely when unconfigured. These send purchase/refund events server-side, alongside (not instead of) the browser-side pixels.</div>
 

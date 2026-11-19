@@ -7,6 +7,7 @@ use App\Models\AppSetting;
 use App\Models\AuditLog;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
 
 class SettingsController extends Controller
@@ -23,6 +24,8 @@ class SettingsController extends Controller
         'meta.pixel_id', 'meta.access_token',
         'tiktok.pixel_code', 'tiktok.access_token',
         'google.client_id', 'google.client_secret',
+        'google_sheets.spreadsheet_id', 'google_sheets.credentials_json', 'google_sheets.sync_token',
+        'aliexpress_extension.token',
     ];
 
     public function index(): View
@@ -51,6 +54,15 @@ class SettingsController extends Controller
             'tiktok_access_token' => ['nullable', 'string', 'max:255'],
             'google_client_id' => ['nullable', 'string', 'max:255'],
             'google_client_secret' => ['nullable', 'string', 'max:255'],
+            'google_sheets_spreadsheet_id' => ['nullable', 'string', 'max:255'],
+            'google_sheets_credentials_json' => ['nullable', 'json', function ($attribute, $value, $fail) {
+                $decoded = json_decode((string) $value, true);
+                if (filled($value) && (! is_array($decoded) || blank($decoded['private_key'] ?? null) || blank($decoded['client_email'] ?? null))) {
+                    $fail('That doesn\'t look like a Google service account key — it needs "client_email" and "private_key".');
+                }
+            }],
+            'google_sheets_sync_token' => ['nullable', 'string', 'max:255'],
+            'aliexpress_extension_token' => ['nullable', 'string', 'max:255'],
         ]);
 
         $changed = [];
@@ -72,6 +84,10 @@ class SettingsController extends Controller
             'tiktok_access_token' => 'tiktok.access_token',
             'google_client_id' => 'google.client_id',
             'google_client_secret' => 'google.client_secret',
+            'google_sheets_spreadsheet_id' => 'google_sheets.spreadsheet_id',
+            'google_sheets_credentials_json' => 'google_sheets.credentials_json',
+            'google_sheets_sync_token' => 'google_sheets.sync_token',
+            'aliexpress_extension_token' => 'aliexpress_extension.token',
         ];
 
         foreach ($map as $field => $settingKey) {
@@ -81,6 +97,10 @@ class SettingsController extends Controller
                 AppSetting::set($settingKey, $validated[$field]);
                 $changed[] = $settingKey;
             }
+        }
+
+        if (array_intersect($changed, ['google_sheets.credentials_json', 'google_sheets.spreadsheet_id'])) {
+            Cache::forget('google_sheets_access_token');
         }
 
         if ($changed) {

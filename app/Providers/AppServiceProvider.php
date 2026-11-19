@@ -3,6 +3,10 @@
 namespace App\Providers;
 
 use App\Models\Category;
+use App\Models\Product;
+use App\Models\ProductVariant;
+use App\Observers\ProductSheetObserver;
+use App\Observers\ProductVariantSheetObserver;
 use App\Services\Cart\CartResolver;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\View;
@@ -24,6 +28,9 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Paginator::useBootstrapFive();
+
+        Product::observe(ProductSheetObserver::class);
+        ProductVariant::observe(ProductVariantSheetObserver::class);
 
         View::composer(['partials.store-header', 'partials.store-mega-nav', 'partials.store-footer', 'store.home'], function ($view) {
             $view->with(

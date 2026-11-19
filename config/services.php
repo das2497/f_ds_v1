@@ -44,6 +44,25 @@ return [
         'api_key' => env('CJ_API_KEY'),
     ],
 
+    // Setup: create a Google Cloud service account with the Sheets API
+    // enabled, download its JSON key to the credentials_path below, share
+    // the target spreadsheet with that service account's email (Editor
+    // access), and copy the spreadsheet's ID (the long id in its URL)
+    // into spreadsheet_id. sync_token is any random string — put the same
+    // value in the Sheet's Apps Script (see resources/google-apps-script/
+    // sheet-sync.gs) as WEBHOOK_TOKEN.
+    'google_sheets' => [
+        'spreadsheet_id' => env('GOOGLE_SHEETS_SPREADSHEET_ID'),
+        'credentials_path' => env('GOOGLE_SHEETS_CREDENTIALS_PATH'),
+        'sync_token' => env('GOOGLE_SHEETS_SYNC_TOKEN'),
+    ],
+
+    // Setup: any random string, entered into the Chrome extension's
+    // "Store settings" panel (resources/chrome-extension/aliexpress-importer).
+    'aliexpress_extension' => [
+        'token' => env('ALIEXPRESS_EXTENSION_TOKEN'),
+    ],
+
     'ollama' => [
         'api_key' => env('OLLAMA_API_KEY'),
         'model' => env('OLLAMA_MODEL', 'gemma4:31b'),

@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "Felixes USA — AliExpress Importer",
+  "version": "1.0.0",
+  "description": "Scrape the AliExpress product page you're viewing and send it to the Felixes USA admin as a new Inactive product, one click.",
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Import to Felixes USA"
+  },
+  "permissions": ["activeTab", "scripting", "storage"],
+  "host_permissions": [
+    "https://*.aliexpress.com/*",
+    "https://*.aliexpress.us/*",
+    "https://your-store-domain.com/*"
+  ]
+}

@@ -1,0 +1,59 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Import to Felixes USA</title>
+  <style>
+    body { font: 13px/1.4 system-ui, sans-serif; width: 320px; padding: 12px; color: #222; }
+    h1 { font-size: 14px; margin: 0 0 8px; }
+    label { display: block; font-size: 11px; color: #555; margin-top: 8px; }
+    input, textarea { width: 100%; box-sizing: border-box; padding: 5px 6px; font-size: 12px; margin-top: 2px; }
+    textarea { resize: vertical; min-height: 40px; }
+    .thumbs { display: flex; gap: 4px; margin-top: 6px; flex-wrap: wrap; }
+    .thumbs img { width: 40px; height: 40px; object-fit: cover; border: 1px solid #ddd; border-radius: 3px; }
+    .variants { margin-top: 6px; font-size: 11px; color: #555; }
+    button { width: 100%; margin-top: 10px; padding: 8px; font-size: 13px; cursor: pointer; }
+    #importBtn { background: #1a7f37; color: #fff; border: none; border-radius: 4px; }
+    #importBtn:disabled { background: #999; cursor: default; }
+    #status { margin-top: 8px; font-size: 12px; }
+    #status.error { color: #b42318; }
+    #status.ok { color: #1a7f37; }
+    details { margin-top: 10px; }
+    summary { cursor: pointer; font-size: 11px; color: #555; }
+  </style>
+</head>
+<body>
+  <h1>Import to Felixes USA</h1>
+  <div id="notice" style="font-size:12px;color:#555;"></div>
+
+  <div id="form" style="display:none;">
+    <label>Title
+      <input id="title" type="text" />
+    </label>
+    <label>Price (cost, USD)
+      <input id="price" type="number" step="0.01" min="0" />
+    </label>
+    <label>Description
+      <textarea id="description"></textarea>
+    </label>
+    <div class="thumbs" id="thumbs"></div>
+    <div class="variants" id="variantsInfo"></div>
+
+    <button id="importBtn">Import as Inactive</button>
+    <div id="status"></div>
+  </div>
+
+  <details>
+    <summary>Store settings</summary>
+    <label>Store URL
+      <input id="storeUrl" type="text" placeholder="https://your-store-domain.com" />
+    </label>
+    <label>Extension token
+      <input id="token" type="password" placeholder="ALIEXPRESS_EXTENSION_TOKEN" />
+    </label>
+    <button id="saveSettingsBtn">Save settings</button>
+  </details>
+
+  <script src="popup.js"></script>
+</body>
+</html>
