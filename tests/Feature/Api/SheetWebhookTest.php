@@ -2,8 +2,10 @@
 
 namespace Tests\Feature\Api;
 
+use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductVariant;
+use App\Models\Subcategory;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -146,5 +148,74 @@ class SheetWebhookTest extends TestCase
         $response->assertStatus(422);
         $response->assertJsonStructure(['error']);
         $this->assertSame('Original Title', $product->fresh()->title);
+    }
+
+    public function test_editing_a_product_row_with_a_valid_category_and_subcategory_resolves_them_by_name(): void
+    {
+        $product = $this->product();
+        $category = Category::create(['name' => 'Toys & Games', 'slug' => 'toys-games']);
+        $subcategory = Subcategory::create(['category_id' => $category->id, 'name' => 'Outdoor Play', 'slug' => 'outdoor-play']);
+
+        $response = $this->postJson('/api/sheet-sync/webhook', [
+            'sheet' => 'Products',
+            'id' => $product->id,
+            'values' => [
+                'Title' => 'Original Title',
+                'Price' => '10',
+                'Active' => 'TRUE',
+                // Case-insensitive on purpose — an admin typing into a
+                // sheet cell shouldn't have to match capitalization.
+                'Category' => 'toys & games',
+                'Subcategory' => 'outdoor play',
+            ],
+        ], ['Authorization' => 'Bearer test-sheet-token']);
+
+        $response->assertOk()->assertJson(['status' => 'ok']);
+
+        $product->refresh();
+        $this->assertSame($category->id, $product->category_id);
+        $this->assertSame($subcategory->id, $product->subcategory_id);
+    }
+
+    public function test_an_unknown_category_name_is_rejected_without_changing_the_product(): void
+    {
+        $product = $this->product();
+
+        $response = $this->postJson('/api/sheet-sync/webhook', [
+            'sheet' => 'Products',
+            'id' => $product->id,
+            'values' => [
+                'Title' => 'Original Title',
+                'Price' => '10',
+                'Active' => 'TRUE',
+                'Category' => 'Not A Real Category',
+            ],
+        ], ['Authorization' => 'Bearer test-sheet-token']);
+
+        $response->assertStatus(422);
+        $response->assertJsonStructure(['error']);
+        $this->assertNull($product->fresh()->category_id);
+    }
+
+    public function test_clearing_the_category_cell_clears_the_products_category(): void
+    {
+        $category = Category::create(['name' => 'Toys & Games', 'slug' => 'toys-games']);
+        $product = $this->product(['category_id' => $category->id]);
+
+        $response = $this->postJson('/api/sheet-sync/webhook', [
+            'sheet' => 'Products',
+            'id' => $product->id,
+            'values' => [
+                'Title' => 'Original Title',
+                'Price' => '10',
+                'Active' => 'TRUE',
+                'Category' => '',
+            ],
+        ], ['Authorization' => 'Bearer test-sheet-token']);
+
+        $response->assertOk();
+        $product->refresh();
+        $this->assertNull($product->category_id);
+        $this->assertNull($product->subcategory_id);
     }
 }

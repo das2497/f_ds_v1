@@ -34,7 +34,7 @@ class BackfillGoogleSheets extends Command
         // per-minute Sheets API quota the moment the catalog has more
         // than a few dozen products.
         $productCount = 0;
-        Product::query()->orderBy('id')->chunk(200, function ($products) use ($sheets, &$productCount) {
+        Product::query()->with(['category', 'subcategory'])->orderBy('id')->chunk(200, function ($products) use ($sheets, &$productCount) {
             $sheets->bulkUpsertProducts($products);
             $productCount += $products->count();
         });

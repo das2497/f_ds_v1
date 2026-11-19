@@ -38,7 +38,12 @@ class GoogleSheetsService
 
     public const VARIANTS_SHEET = 'Variants';
 
-    public const PRODUCT_HEADERS = ['ID', 'Title', 'Description', 'Price', 'Compare At Price', 'Active', 'Source Vendor', 'Updated At', 'Sync Status'];
+    // Category/Subcategory/Source URL are appended at the end rather than
+    // inserted among the original columns, so rows already synced before
+    // these existed stay aligned under their existing columns — a
+    // backfill run then only needs to fill in the new ones, not realign
+    // the sheet.
+    public const PRODUCT_HEADERS = ['ID', 'Title', 'Description', 'Price', 'Compare At Price', 'Active', 'Source Vendor', 'Updated At', 'Category', 'Subcategory', 'Source URL', 'Sync Status'];
 
     public const VARIANT_HEADERS = ['ID', 'Product ID', 'SKU', 'Option Label', 'Color', 'Size', 'Cost Price', 'Price', 'Stock Status', 'Active', 'Updated At', 'Sync Status'];
 
@@ -124,6 +129,9 @@ class GoogleSheetsService
             'Active' => $product->is_active ? 'TRUE' : 'FALSE',
             'Source Vendor' => (string) $product->source_vendor,
             'Updated At' => optional($product->updated_at)->toDateTimeString(),
+            'Category' => (string) ($product->category?->name),
+            'Subcategory' => (string) ($product->subcategory?->name),
+            'Source URL' => (string) $product->source_url,
             'Sync Status' => '',
         ];
     }
