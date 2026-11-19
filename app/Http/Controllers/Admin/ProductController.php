@@ -155,6 +155,14 @@ class ProductController extends Controller
             'price' => ['required', 'numeric', 'min:0'],
             'compare_at_price' => ['nullable', 'numeric', 'min:0'],
             'is_active' => ['nullable', 'boolean'],
+            'source_url' => ['nullable', 'string', 'max:500'],
+            // Images fetched from a source link (e.g. via the "Fetch from
+            // AliExpress" button) arrive as already-hosted URLs here,
+            // alongside whatever the admin uploads directly — merged the
+            // same way the vendor-candidate flow merges vendor photos
+            // with custom uploads.
+            'images' => ['nullable', 'array'],
+            'images.*' => ['string'],
             'custom_images' => ['nullable', 'array'],
             'custom_images.*' => ['file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'video' => ['nullable', 'file', 'mimetypes:video/mp4', 'max:'.self::MAX_VIDEO_KB],
@@ -167,10 +175,11 @@ class ProductController extends Controller
             'variants.*.price' => ['nullable', 'numeric', 'min:0'],
             'variants.*.weight_lb' => ['nullable', 'numeric', 'min:0'],
             'variants.*.image' => ['nullable', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'variants.*.vendor_image' => ['nullable', 'string'],
         ]);
 
         $isActive = $request->boolean('is_active');
-        $imageUrls = $this->mergeImages([], $request->file('custom_images', []));
+        $imageUrls = $this->mergeImages($validated['images'] ?? [], $request->file('custom_images', []));
         $videoPath = $request->hasFile('video') ? $request->file('video')->store('products/videos', 'public') : null;
 
         $product = DB::transaction(function () use ($request, $validated, $isActive, $imageUrls, $videoPath) {
@@ -178,6 +187,7 @@ class ProductController extends Controller
                 'category_id' => $validated['category_id'],
                 'subcategory_id' => $validated['subcategory_id'] ?? null,
                 'source_vendor' => 'manual',
+                'source_url' => $validated['source_url'] ?? null,
                 'title' => $validated['title'],
                 'slug' => $this->uniqueSlug($validated['title']),
                 'description' => DescriptionSanitizer::sanitize($validated['description'] ?? null),
@@ -192,7 +202,7 @@ class ProductController extends Controller
                 $product->variants()->create([
                     'sku' => $variant['sku'],
                     'option_label' => $variant['option_label'],
-                    'image' => $this->resolveVariantImage($request, "variants.{$i}.image", null),
+                    'image' => $this->resolveVariantImage($request, "variants.{$i}.image", $variant['vendor_image'] ?? null),
                     'color' => $variant['color'] ?? null,
                     'size' => $variant['size'] ?? null,
                     'cost_price' => $variant['cost_price'],

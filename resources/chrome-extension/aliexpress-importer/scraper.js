@@ -23,8 +23,17 @@ function scrapeAliExpressProduct() {
       || document.querySelector('h1')
   ) || document.title.replace(/\s*[-|].*$/, '').trim();
 
+  // AliExpress shows a crossed-out "original" price next to almost every
+  // "New shopper exclusive" / "Black Friday" / "Limited deal" promo price —
+  // that struck-through figure is the product's real, standing price; the
+  // large bold one beside it is a one-time promo that doesn't reflect what
+  // this product actually costs to source. Prefer the original price, and
+  // only fall back to "current" when there's no discount at all (nothing
+  // struck through — so "current" already IS the real price).
   const priceText = text(
-    document.querySelector('[class*="price-default--current"]')
+    document.querySelector('[class*="price-default--original"]')
+      || document.querySelector('[class*="price--original"]')
+      || document.querySelector('[class*="price-default--current"]')
       || document.querySelector('[class*="price--current"]')
       || document.querySelector('[class*="uniform-banner-box-price"]')
       || document.querySelector('[class*="product-price-value"]')

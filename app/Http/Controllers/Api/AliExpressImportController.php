@@ -12,7 +12,6 @@ use App\Services\Images\ImageOptimizer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 /**
@@ -72,9 +71,8 @@ class AliExpressImportController extends Controller
             $imageUrls = collect($validated['images'] ?? [$validated['preview_image_url'] ?? null])
                 ->filter()
                 ->unique()
-                ->map(fn ($url) => $this->imageOptimizer->storeFromUrl($url, 'products'))
+                ->map(fn ($url) => $this->imageOptimizer->storeFromUrlAsPublicUrl($url, 'products'))
                 ->filter()
-                ->map(fn ($path) => Storage::disk('public')->url($path))
                 ->values()
                 ->all();
 
@@ -90,13 +88,11 @@ class AliExpressImportController extends Controller
             ]);
 
             foreach ($validated['variants'] as $i => $variant) {
-                $variantImagePath = $this->imageOptimizer->storeFromUrl($variant['image'] ?? null, 'products/variants');
-
                 $product->variants()->create([
                     'sku' => $this->generateSku($candidate->vendor_external_id, $i),
                     'vendor_sku' => $variant['vendor_sku'] ?? null,
                     'option_label' => $variant['option_label'],
-                    'image' => $variantImagePath ? Storage::disk('public')->url($variantImagePath) : null,
+                    'image' => $this->imageOptimizer->storeFromUrlAsPublicUrl($variant['image'] ?? null, 'products/variants'),
                     'color' => $variant['color'] ?? null,
                     'size' => $variant['size'] ?? null,
                     'weight_lb' => $variant['weight_lb'] ?? null,

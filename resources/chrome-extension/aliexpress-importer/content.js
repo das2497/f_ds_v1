@@ -1,12 +1,17 @@
 /**
  * Injects a "+ Shobley" button onto every product card on any AliExpress
- * listing page (search results, category pages, the homepage grid, etc.)
- * — not just a single product's own page. Clicking it asks background.js
- * to open that product's real page in a hidden tab, scrape it there
- * (AliExpress renders everything client-side, so a plain fetch of the
- * page returns nothing useful), then imports it straight away as an
- * Inactive product — no review step, just a toast, the same way "add to
- * cart" works.
+ * listing page (search results, category pages, the homepage grid, etc.),
+ * AND a floating "+ Add to Shobley" button on a product's own page.
+ *
+ * A card's own page hasn't been loaded yet, so clicking its button asks
+ * background.js to open that product's real page in a hidden tab and
+ * scrape it there (AliExpress renders everything client-side, so a plain
+ * fetch of the page returns nothing useful) — see scrapeProductPage()
+ * below. The floating button on a product's own page is already looking
+ * at the real, rendered page, so it scrapes straight from `document`
+ * instead (scraper.js, loaded before this file). Either way it then
+ * imports the product straight away as Inactive — no review step, just a
+ * toast, the same way "add to cart" works.
  *
  * AliExpress's markup/class names are undocumented and change over time,
  * so card detection here is deliberately loose (any link to `/item/...`)
@@ -45,6 +50,25 @@
       .shobley-add-btn[data-state="loading"] { background: #6b7280; cursor: wait; }
       .shobley-add-btn[data-state="done"] { background: #1a7f37; }
       .shobley-add-btn[data-state="error"] { background: #b42318; }
+      #shobley-product-page-btn {
+        position: fixed;
+        bottom: 24px;
+        left: 24px;
+        z-index: 2147483000;
+        background: #1a7f37;
+        color: #fff;
+        border: none;
+        border-radius: 999px;
+        font-size: 14px;
+        font-weight: 600;
+        padding: 12px 20px;
+        cursor: pointer;
+        box-shadow: 0 2px 10px rgba(0,0,0,.35);
+        font-family: system-ui, sans-serif;
+      }
+      #shobley-product-page-btn:hover { background: #166534; }
+      #shobley-product-page-btn[data-state="loading"] { background: #6b7280; cursor: wait; }
+      #shobley-product-page-btn[data-state="error"] { background: #b42318; }
       #shobley-toast {
         position: fixed;
         bottom: 20px;
@@ -104,14 +128,38 @@
       button.addEventListener('click', (event) => {
         event.preventDefault();
         event.stopPropagation();
-        handleAdd(button, anchor.href);
+        handleAdd(button, () => scrapeProductPage(anchor.href), '+ Shobley');
       });
 
       anchor.appendChild(button);
     });
   }
 
-  async function handleAdd(button, productUrl) {
+  function isProductPage() {
+    return /\/item\/\d+\.html/.test(location.pathname);
+  }
+
+  function injectProductPageButton() {
+    if (document.getElementById('shobley-product-page-btn')) {
+      return;
+    }
+
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.id = 'shobley-product-page-btn';
+    button.textContent = '+ Add to Shobley';
+    button.title = 'Add this product to Shobley (as Inactive)';
+
+    // Already on the real, rendered page — no need to ask background.js
+    // to open a hidden tab, just scrape `document` directly.
+    button.addEventListener('click', () => {
+      handleAdd(button, () => Promise.resolve(scrapeAliExpressProduct()), '+ Add to Shobley');
+    });
+
+    document.body.appendChild(button);
+  }
+
+  async function handleAdd(button, scrape, idleLabel) {
     const { storeUrl, token } = await chrome.storage.local.get(['storeUrl', 'token']);
 
     if (!storeUrl || !token) {
@@ -123,7 +171,7 @@
     button.textContent = 'Adding…';
 
     try {
-      const payload = await scrapeProductPage(productUrl);
+      const payload = await scrape();
 
       const response = await fetch(storeUrl.replace(/\/$/, '') + '/api/aliexpress/products', {
         method: 'POST',
@@ -146,7 +194,7 @@
       );
     } catch (err) {
       button.dataset.state = 'error';
-      button.textContent = '+ Shobley';
+      button.textContent = idleLabel;
       showToast('Could not add: ' + err.message, 'error');
     }
   }
@@ -177,10 +225,17 @@
 
   injectStyles();
   scan();
+  if (isProductPage()) {
+    injectProductPageButton();
+  }
 
   // Listing pages lazy-load cards as the user scrolls, and AliExpress's
   // category/search pages are largely a SPA — re-scan whenever the DOM
-  // changes instead of only once on load.
+  // changes instead of only once on load. The product-page button only
+  // ever needs adding once (injectProductPageButton() is itself a no-op
+  // if it's already there), but the SPA can still swap the whole page
+  // (e.g. following a "related product" link) without a real navigation,
+  // so re-check that too on every DOM change.
   let scheduled = false;
   const observer = new MutationObserver(() => {
     if (scheduled) {
@@ -190,6 +245,9 @@
     setTimeout(() => {
       scheduled = false;
       scan();
+      if (isProductPage()) {
+        injectProductPageButton();
+      }
     }, 500);
   });
   observer.observe(document.body, { childList: true, subtree: true });

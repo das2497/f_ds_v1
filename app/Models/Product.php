@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable([
-    'category_id', 'subcategory_id', 'vendor_product_candidate_id', 'source_vendor',
+    'category_id', 'subcategory_id', 'vendor_product_candidate_id', 'source_vendor', 'source_url',
     'title', 'slug', 'description', 'price', 'compare_at_price', 'images', 'video_path', 'is_active',
 ])]
 class Product extends Model

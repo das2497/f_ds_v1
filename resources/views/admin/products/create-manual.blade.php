@@ -27,6 +27,16 @@
         <div class="row g-4">
             <div class="col-lg-8">
                 <div class="table-admin p-4 mb-3">
+                    <h6 class="mb-3"><i class="bi bi-link-45deg me-2 text-muted-slate"></i>Import from AliExpress <span class="text-muted-slate small fw-normal">(optional)</span></h6>
+                    <p class="small text-muted-slate">Paste the AliExpress product link and fetch its title, description, photos and variant photos automatically — you still pick the category, price and SKUs yourself before publishing. Requires the Shobley Chrome extension to be installed and enabled.</p>
+                    <div class="d-flex gap-2">
+                        <input type="text" name="source_url" id="aliexpressLink" class="form-control" placeholder="https://www.aliexpress.com/item/....html" value="{{ old('source_url') }}">
+                        <button type="button" class="btn btn-outline-secondary text-nowrap" id="aliexpressFetchBtn">Fetch from AliExpress</button>
+                    </div>
+                    <div class="small mt-2" id="aliexpressFetchStatus"></div>
+                </div>
+
+                <div class="table-admin p-4 mb-3">
                     <h6 class="mb-3"><i class="bi bi-card-text me-2 text-muted-slate"></i>Shop Listing Details</h6>
                     <div class="row g-3">
                         <div class="col-12">
@@ -87,6 +97,7 @@
                     <div class="table-admin p-4 mb-3">
                         <h6 class="mb-3"><i class="bi bi-images me-2 text-muted-slate"></i>Product Images</h6>
                         <p class="small text-muted-slate">Upload at least one photo. The first image is the main photo shown on the shop.</p>
+                        <div class="row g-2 mb-2" id="fetchedImagesRow"></div>
                         <label class="form-label small">Upload Images</label>
                         <input type="file" name="custom_images[]" accept="image/jpeg,image/png,image/webp" multiple class="form-control form-control-sm" id="customImages">
                         <div class="form-text">JPG/PNG/WEBP, 5MB max per image.</div>
@@ -137,36 +148,62 @@
         (function () {
             var customImages = document.getElementById('customImages');
             var counter = document.getElementById('imageCounter');
+            var fetchedRow = document.getElementById('fetchedImagesRow');
+            var tbody = document.getElementById('variantRows');
+            var addVariantButton = document.getElementById('addVariantRow');
+            var titleField = document.querySelector('#manualProductForm [name="title"]');
+            var descSurface = document.querySelector('[data-rte-surface]');
+            var descSource = document.getElementById('descriptionField');
+            var rowCount = 0;
 
-            function refresh() {
-                var total = customImages.files.length;
+            function refreshImageCounter() {
+                var total = customImages.files.length + fetchedRow.querySelectorAll('.js-fetched-image-tile').length;
                 counter.textContent = total + ' image' + (total === 1 ? '' : 's') + ' selected';
             }
 
-            customImages.addEventListener('change', refresh);
-            refresh();
-        })();
+            // Adds a tile for an image already fetched (and re-hosted) from
+            // AliExpress — a hidden `images[]` input carries its URL
+            // straight through to the server the same way edit.blade.php's
+            // existing-image tiles do, alongside whatever gets uploaded.
+            function addFetchedImage(url) {
+                var tile = document.createElement('div');
+                tile.className = 'col-6 js-fetched-image-tile';
+                tile.innerHTML =
+                    '<div class="cart-item__image position-relative" style="width:100%;height:90px">' +
+                        '<img src="' + url + '" style="width:100%;height:100%;object-fit:cover;border-radius:6px">' +
+                        '<input type="hidden" name="images[]" value="' + url + '">' +
+                        '<button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-1 js-remove-fetched-image" style="padding:0;width:22px;height:22px;line-height:1" aria-label="Remove this image">&times;</button>' +
+                    '</div>';
 
-        (function () {
-            var tbody = document.getElementById('variantRows');
-            var addButton = document.getElementById('addVariantRow');
-            var rowCount = 0;
+                tile.querySelector('.js-remove-fetched-image').addEventListener('click', function () {
+                    tile.remove();
+                    refreshImageCounter();
+                });
 
-            function addRow() {
+                fetchedRow.appendChild(tile);
+                refreshImageCounter();
+            }
+
+            // `prefill`, when given, pre-fills the row from a scraped
+            // AliExpress variant ({option_label, color, size, cost_price,
+            // weight_lb, image}) instead of leaving it blank — the SKU is
+            // always left for the admin to type themselves.
+            function addVariantRow(prefill) {
                 var i = rowCount++;
                 var tr = document.createElement('tr');
                 tr.innerHTML =
                     '<td>' +
                         '<img src="https://placehold.co/48x48/F8FAFC/64748B?text=No+Image" class="js-variant-thumb" style="width:44px;height:44px;object-fit:cover;border-radius:6px;border:1px solid var(--color-border)">' +
                         '<input type="file" name="variants[' + i + '][image]" accept="image/jpeg,image/png,image/webp" class="form-control form-control-sm mt-1 js-variant-image-input" style="font-size:0.7rem">' +
+                        '<input type="hidden" name="variants[' + i + '][vendor_image]" class="js-variant-vendor-image">' +
                     '</td>' +
-                    '<td><input type="text" name="variants[' + i + '][option_label]" class="form-control form-control-sm" placeholder="e.g. Medium / Blue" required></td>' +
-                    '<td><input type="text" name="variants[' + i + '][color]" class="form-control form-control-sm" style="width:90px"></td>' +
-                    '<td><input type="text" name="variants[' + i + '][size]" class="form-control form-control-sm" style="width:90px"></td>' +
+                    '<td><input type="text" name="variants[' + i + '][option_label]" class="form-control form-control-sm js-variant-option-label" placeholder="e.g. Medium / Blue" required></td>' +
+                    '<td><input type="text" name="variants[' + i + '][color]" class="form-control form-control-sm js-variant-color" style="width:90px"></td>' +
+                    '<td><input type="text" name="variants[' + i + '][size]" class="form-control form-control-sm js-variant-size" style="width:90px"></td>' +
                     '<td><input type="text" name="variants[' + i + '][sku]" class="form-control form-control-sm" placeholder="SHB-..." style="width:160px" required></td>' +
-                    '<td><input type="number" step="0.01" min="0" name="variants[' + i + '][cost_price]" class="form-control form-control-sm" style="width:90px" required></td>' +
+                    '<td><input type="number" step="0.01" min="0" name="variants[' + i + '][cost_price]" class="form-control form-control-sm js-variant-cost-price" style="width:90px" required></td>' +
                     '<td><div class="input-group input-group-sm" style="width:110px"><span class="input-group-text">$</span><input type="number" step="0.01" min="0" name="variants[' + i + '][price]" class="form-control form-control-sm"></div></td>' +
-                    '<td><input type="number" step="0.01" min="0" name="variants[' + i + '][weight_lb]" class="form-control form-control-sm" style="width:80px"></td>' +
+                    '<td><input type="number" step="0.01" min="0" name="variants[' + i + '][weight_lb]" class="form-control form-control-sm js-variant-weight" style="width:80px"></td>' +
                     '<td><button type="button" class="btn-icon btn-icon-danger js-remove-variant" title="Remove"><i class="bi bi-trash3"></i></button></td>';
 
                 tbody.appendChild(tr);
@@ -183,11 +220,63 @@
                         tr.remove();
                     }
                 });
+
+                if (prefill) {
+                    tr.querySelector('.js-variant-option-label').value = prefill.option_label || '';
+                    tr.querySelector('.js-variant-color').value = prefill.color || '';
+                    tr.querySelector('.js-variant-size').value = prefill.size || '';
+                    tr.querySelector('.js-variant-cost-price').value = prefill.cost_price || '';
+                    tr.querySelector('.js-variant-weight').value = prefill.weight_lb || '';
+                    if (prefill.image) {
+                        tr.querySelector('.js-variant-vendor-image').value = prefill.image;
+                        tr.querySelector('.js-variant-thumb').src = prefill.image;
+                    }
+                }
+
+                return tr;
             }
 
-            addButton.addEventListener('click', addRow);
+            customImages.addEventListener('change', refreshImageCounter);
+            addVariantButton.addEventListener('click', function () { addVariantRow(); });
 
-            addRow();
+            refreshImageCounter();
+            addVariantRow();
+
+            // Fired by the Chrome extension's content script (admin.js)
+            // once it's scraped the pasted AliExpress link and the server
+            // has downloaded/re-hosted the images — see
+            // AliExpressPrefillController.
+            window.addEventListener('shobley-aliexpress-prefill', function (e) {
+                var data = e.detail;
+                if (!data) {
+                    return;
+                }
+
+                if (data.title && titleField && ! titleField.value) {
+                    titleField.value = data.title;
+                }
+                if (data.description && descSurface && descSource && ! descSource.value) {
+                    descSurface.textContent = data.description;
+                    descSource.value = data.description;
+                }
+
+                (data.images || []).forEach(addFetchedImage);
+
+                if (data.variants && data.variants.length) {
+                    // Drop any still-blank default row(s) before adding the
+                    // fetched ones, so the admin isn't left with an empty
+                    // required row alongside the real ones.
+                    Array.from(tbody.querySelectorAll('tr')).forEach(function (tr) {
+                        var label = tr.querySelector('.js-variant-option-label');
+                        var cost = tr.querySelector('.js-variant-cost-price');
+                        if (label && cost && ! label.value && ! cost.value) {
+                            tr.remove();
+                        }
+                    });
+
+                    data.variants.forEach(addVariantRow);
+                }
+            });
         })();
     </script>
 </x-admin-layout>

@@ -61,7 +61,7 @@ class ImageOptimizer
             }
 
             $image = (new ImageManager(new Driver))
-                ->read($response->body())
+                ->decodeBinary($response->body())
                 ->scaleDown(self::MAX_DIMENSION, self::MAX_DIMENSION);
 
             $path = trim($directory, '/').'/'.Str::random(40).'.webp';
@@ -75,5 +75,17 @@ class ImageOptimizer
         } catch (\Throwable) {
             return null;
         }
+    }
+
+    /**
+     * Same as storeFromUrl(), but returns the public URL to the stored
+     * copy (or null) instead of the disk-relative path — the shape every
+     * caller that downloads a vendor image actually wants.
+     */
+    public function storeFromUrlAsPublicUrl(?string $url, string $directory, string $disk = 'public'): ?string
+    {
+        $path = $this->storeFromUrl($url, $directory, $disk);
+
+        return $path ? Storage::disk($disk)->url($path) : null;
     }
 }

@@ -19,7 +19,12 @@
   "content_scripts": [
     {
       "matches": ["https://*.aliexpress.com/*", "https://*.aliexpress.us/*"],
-      "js": ["content.js"],
+      "js": ["scraper.js", "content.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://shobley.com/admin/products/create-manual*"],
+      "js": ["admin.js"],
       "run_at": "document_idle"
     }
   ]

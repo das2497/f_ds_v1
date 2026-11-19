@@ -5,6 +5,8 @@ namespace Tests\Feature\Api;
 use App\Models\Product;
 use App\Models\VendorProductCandidate;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class AliExpressImportTest extends TestCase
@@ -84,5 +86,42 @@ class AliExpressImportTest extends TestCase
 
         $response->assertStatus(422);
         $this->assertDatabaseMissing('products', ['title' => 'Wireless Earbuds']);
+    }
+
+    /**
+     * Regression test: ImageOptimizer::storeFromUrl() called a method
+     * (ImageManager::read()) that doesn't exist on the installed
+     * intervention/image version — it threw, was swallowed by the
+     * blanket catch, and silently returned null every time. Every
+     * AliExpress import therefore published with zero images despite the
+     * scraper finding plenty, which is why real imports showed "No
+     * Image" placeholders in the admin panel.
+     */
+    public function test_scraped_images_are_actually_downloaded_and_attached(): void
+    {
+        Storage::fake('public');
+
+        $image = imagecreatetruecolor(1, 1);
+        ob_start();
+        imagepng($image);
+        $bytes = ob_get_clean();
+        imagedestroy($image);
+
+        Http::fake(['*' => Http::response($bytes, 200, ['Content-Type' => 'image/png'])]);
+
+        $response = $this->postJson('/api/aliexpress/products', $this->payload([
+            'images' => ['https://ae-pic.example.com/photo1.jpg'],
+            'variants' => [
+                ['option_label' => 'Black', 'color' => 'Black', 'cost_price' => 8.50, 'image' => 'https://ae-pic.example.com/variant1.jpg'],
+            ],
+        ]), [
+            'Authorization' => 'Bearer test-extension-token',
+        ]);
+
+        $response->assertCreated();
+
+        $product = Product::where('title', 'Wireless Earbuds')->firstOrFail();
+        $this->assertNotEmpty($product->images);
+        $this->assertNotNull($product->variants->first()->image);
     }
 }
