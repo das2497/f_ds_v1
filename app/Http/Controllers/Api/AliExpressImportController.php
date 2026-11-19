@@ -33,6 +33,7 @@ class AliExpressImportController extends Controller
             'vendor_external_id' => ['required', 'string', 'max:255'],
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
+            'source_url' => ['nullable', 'string', 'max:500'],
             'preview_image_url' => ['nullable', 'string'],
             'images' => ['nullable', 'array'],
             'images.*' => ['string'],
@@ -79,6 +80,7 @@ class AliExpressImportController extends Controller
             $product = Product::create([
                 'vendor_product_candidate_id' => $candidate->id,
                 'source_vendor' => 'aliexpress',
+                'source_url' => $validated['source_url'] ?? null,
                 'title' => $validated['title'],
                 'slug' => $this->uniqueSlug($validated['title']),
                 'description' => DescriptionSanitizer::sanitize($validated['description'] ?? null),

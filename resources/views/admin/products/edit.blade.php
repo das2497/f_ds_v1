@@ -7,6 +7,12 @@
         <h5 class="mb-0">Edit Product</h5>
     </div>
 
+    @if ($product->source_url)
+        <div class="small text-muted-slate mb-3">
+            <i class="bi bi-link-45deg"></i> Source: <a href="{{ $product->source_url }}" target="_blank" rel="noopener">{{ \Illuminate\Support\Str::limit($product->source_url, 80) }}</a>
+        </div>
+    @endif
+
     @if (session('status'))
         <div class="alert alert-success">{{ session('status') }}</div>
     @endif

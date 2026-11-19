@@ -137,4 +137,31 @@ class ProductEditPageTest extends TestCase
         $response->assertOk();
         $response->assertDontSee('Add More Variants');
     }
+
+    public function test_the_products_source_link_is_shown_when_present(): void
+    {
+        $admin = $this->admin();
+
+        $product = Product::create([
+            'source_vendor' => 'aliexpress',
+            'source_url' => 'https://www.aliexpress.com/item/1005006260949497.html',
+            'title' => 'Blonde Wig',
+            'slug' => 'blonde-wig-2',
+            'price' => 12.5,
+            'images' => [],
+            'is_active' => false,
+        ]);
+        $product->variants()->create([
+            'sku' => 'ALI-1005006260949497-1',
+            'option_label' => 'Default',
+            'cost_price' => 12.5,
+            'stock_status' => 'in_stock',
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('admin.products.edit', $product));
+
+        $response->assertOk();
+        $response->assertSee('https://www.aliexpress.com/item/1005006260949497.html', false);
+    }
 }

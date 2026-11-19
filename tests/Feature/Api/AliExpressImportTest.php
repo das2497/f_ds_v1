@@ -26,6 +26,7 @@ class AliExpressImportTest extends TestCase
             'vendor_external_id' => '1005006123456789',
             'title' => 'Wireless Earbuds',
             'description' => 'Great sound.',
+            'source_url' => 'https://www.aliexpress.com/item/1005006123456789.html',
             'preview_image_url' => null,
             'images' => [],
             'category_hint' => 'Electronics',
@@ -53,6 +54,7 @@ class AliExpressImportTest extends TestCase
         $product = Product::where('title', 'Wireless Earbuds')->firstOrFail();
         $this->assertFalse($product->is_active);
         $this->assertSame('aliexpress', $product->source_vendor);
+        $this->assertSame('https://www.aliexpress.com/item/1005006123456789.html', $product->source_url);
         $this->assertSame('8.50', (string) $product->price);
         $this->assertCount(2, $product->variants);
         $this->assertTrue($product->variants->every(fn ($variant) => $variant->is_active));
