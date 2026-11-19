@@ -11,6 +11,6 @@
   "host_permissions": [
     "https://*.aliexpress.com/*",
     "https://*.aliexpress.us/*",
-    "https://your-store-domain.com/*"
+    "https://shobley.com/*"
   ]
 }
