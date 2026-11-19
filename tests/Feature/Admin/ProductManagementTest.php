@@ -95,4 +95,42 @@ class ProductManagementTest extends TestCase
         $this->put(route('admin.products.toggle-status', $product))->assertRedirect(route('login'));
         $this->delete(route('admin.products.destroy', $product))->assertRedirect(route('login'));
     }
+
+    public function test_the_product_list_can_be_sorted_by_title_ascending(): void
+    {
+        $actor = $this->admin();
+        $this->makeProduct('Zebra Widget');
+        $this->makeProduct('Apple Widget');
+
+        $response = $this->actingAs($actor)->get(route('admin.products', ['sort' => 'title_asc']));
+
+        $response->assertOk();
+        $content = $response->getContent();
+        $this->assertTrue(strpos($content, 'Apple Widget') < strpos($content, 'Zebra Widget'));
+    }
+
+    public function test_the_product_list_can_be_sorted_by_price_descending(): void
+    {
+        $actor = $this->admin();
+        $cheap = $this->makeProduct('Cheap Widget');
+        $cheap->update(['price' => 10]);
+        $expensive = $this->makeProduct('Expensive Widget');
+        $expensive->update(['price' => 200]);
+
+        $response = $this->actingAs($actor)->get(route('admin.products', ['sort' => 'price_desc']));
+
+        $response->assertOk();
+        $content = $response->getContent();
+        $this->assertTrue(strpos($content, 'Expensive Widget') < strpos($content, 'Cheap Widget'));
+    }
+
+    public function test_an_unknown_sort_value_falls_back_to_newest_instead_of_erroring(): void
+    {
+        $actor = $this->admin();
+        $this->makeProduct();
+
+        $response = $this->actingAs($actor)->get(route('admin.products', ['sort' => 'not-a-real-sort']));
+
+        $response->assertOk();
+    }
 }

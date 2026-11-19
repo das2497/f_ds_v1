@@ -24,11 +24,28 @@
         <table class="table table-admin align-middle mb-0">
             <thead>
                 <tr>
-                    <th>Product</th>
-                    <th>Variants</th>
-                    <th>Origin</th>
-                    <th>Price</th>
-                    <th>Status</th>
+                    @php
+                        $sortColumns = [
+                            'title' => 'Product',
+                            'variants' => 'Variants',
+                            'origin' => 'Origin',
+                            'price' => 'Price',
+                            'status' => 'Status',
+                        ];
+                    @endphp
+                    @foreach ($sortColumns as $key => $label)
+                        @php
+                            $isAsc = $sort === "{$key}_asc";
+                            $isDesc = $sort === "{$key}_desc";
+                            $nextSort = $isAsc ? "{$key}_desc" : "{$key}_asc";
+                        @endphp
+                        <th>
+                            <a href="{{ request()->fullUrlWithQuery(['sort' => $nextSort, 'page' => null]) }}" class="text-reset text-decoration-none d-inline-flex align-items-center gap-1">
+                                {{ $label }}
+                                <i class="bi {{ $isAsc ? 'bi-sort-up' : ($isDesc ? 'bi-sort-down' : 'bi-arrow-down-up text-muted-slate') }}" style="font-size:.75rem"></i>
+                            </a>
+                        </th>
+                    @endforeach
                     <th></th>
                 </tr>
             </thead>
@@ -41,7 +58,7 @@
                             </div>
                             {{ $product->title }}
                         </td>
-                        <td>{{ $product->variants->count() }}</td>
+                        <td>{{ $product->variants_count }}</td>
                         <td>
                             @if ($product->source_vendor === 'printful')
                                 <span class="badge rounded-pill" style="background:#EDE9FE;color:#6D28D9">Printful</span>

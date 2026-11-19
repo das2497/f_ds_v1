@@ -25,6 +25,15 @@ class ProductController extends Controller
 {
     private const MAX_VIDEO_KB = 20480;
 
+    private const SORT_OPTIONS = [
+        'newest', 'oldest',
+        'title_asc', 'title_desc',
+        'variants_asc', 'variants_desc',
+        'origin_asc', 'origin_desc',
+        'price_asc', 'price_desc',
+        'status_asc', 'status_desc',
+    ];
+
     public function __construct(
         private readonly PrintfulService $printful,
         private readonly ImageOptimizer $imageOptimizer,
@@ -32,14 +41,29 @@ class ProductController extends Controller
 
     public function index(Request $request): View
     {
-        $products = Product::with(['variants'])
+        $sort = in_array($request->string('sort')->toString(), self::SORT_OPTIONS, true)
+            ? $request->string('sort')->toString()
+            : 'newest';
+
+        $products = Product::withCount('variants')
             ->when($request->filled('q'), fn ($q) => $q->where('title', 'like', '%'.$request->string('q').'%'))
             ->when($request->filled('origin'), fn ($q) => $q->where('source_vendor', $request->string('origin')))
-            ->latest()
+            ->when($sort === 'title_asc', fn ($q) => $q->orderBy('title'))
+            ->when($sort === 'title_desc', fn ($q) => $q->orderByDesc('title'))
+            ->when($sort === 'variants_asc', fn ($q) => $q->orderBy('variants_count'))
+            ->when($sort === 'variants_desc', fn ($q) => $q->orderByDesc('variants_count'))
+            ->when($sort === 'origin_asc', fn ($q) => $q->orderBy('source_vendor'))
+            ->when($sort === 'origin_desc', fn ($q) => $q->orderByDesc('source_vendor'))
+            ->when($sort === 'price_asc', fn ($q) => $q->orderBy('price'))
+            ->when($sort === 'price_desc', fn ($q) => $q->orderByDesc('price'))
+            ->when($sort === 'status_asc', fn ($q) => $q->orderBy('is_active'))
+            ->when($sort === 'status_desc', fn ($q) => $q->orderByDesc('is_active'))
+            ->when($sort === 'oldest', fn ($q) => $q->oldest())
+            ->when($sort === 'newest', fn ($q) => $q->latest())
             ->paginate(20)
             ->withQueryString();
 
-        return view('admin.products.index', compact('products'));
+        return view('admin.products.index', compact('products', 'sort'));
     }
 
     public function create(VendorProductCandidate $candidate): View
