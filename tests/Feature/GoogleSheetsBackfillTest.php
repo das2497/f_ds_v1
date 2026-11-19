@@ -45,6 +45,7 @@ class GoogleSheetsBackfillTest extends TestCase
             '*values/Variants%211%3A1*' => Http::response(['values' => [GoogleSheetsService::VARIANT_HEADERS]]),
             '*values/Products%21A%3AA*' => Http::response(['values' => []]),
             '*values/Variants%21A%3AA*' => Http::response(['values' => []]),
+            '*values:batchUpdate*' => Http::response(['totalUpdatedRows' => 0]),
             '*:append*' => Http::response(['updates' => []]),
         ]);
     }
@@ -93,6 +94,67 @@ class GoogleSheetsBackfillTest extends TestCase
         $this->assertStringContainsString('Pushed 2 products and 2 variants', Artisan::output());
 
         Http::assertSent(fn ($request) => str_contains($request->url(), ':append'));
+    }
+
+    public function test_many_products_are_pushed_without_one_api_call_per_row(): void
+    {
+        // Create the catalog BEFORE configuring/faking Sheets, so the
+        // create/update observers (which fire per-row in real usage too)
+        // don't also hit the fake and muddy what this test is checking:
+        // that the explicit backfill run itself stays call-count-flat.
+        foreach (range(1, 30) as $i) {
+            $this->productWithVariants("Product {$i}");
+        }
+
+        $this->configureSheets();
+        $this->fakeSheetsApi();
+
+        Artisan::call('sheets:backfill');
+
+        // Before batching, 30 products + 30 variants each needed their own
+        // header-check + column-read + write call — 100+ requests. Batched,
+        // it should be a small, roughly-constant handful regardless of
+        // catalog size, which is what keeps this under Google's per-minute
+        // Sheets API quota.
+        $this->assertLessThanOrEqual(10, count(Http::recorded()));
+    }
+
+    public function test_an_existing_row_is_updated_via_batch_update_instead_of_appended_again(): void
+    {
+        // Created before Sheets is configured/faked, same reasoning as
+        // above — avoids a real outbound call from the create observer.
+        $product = $this->productWithVariants('Existing Product');
+        $variant = $product->variants()->first();
+
+        $this->configureSheets();
+
+        Http::fake([
+            'oauth2.googleapis.com/*' => Http::response(['access_token' => 'fake-token']),
+            '*fields=sheets.properties*' => Http::response(['sheets' => [
+                ['properties' => ['sheetId' => 1, 'title' => GoogleSheetsService::PRODUCTS_SHEET]],
+                ['properties' => ['sheetId' => 2, 'title' => GoogleSheetsService::VARIANTS_SHEET]],
+            ]]),
+            '*values/Products%211%3A1*' => Http::response(['values' => [GoogleSheetsService::PRODUCT_HEADERS]]),
+            '*values/Variants%211%3A1*' => Http::response(['values' => [GoogleSheetsService::VARIANT_HEADERS]]),
+            '*values/Products%21A%3AA*' => Http::response(['values' => [['ID'], [(string) $product->id]]]),
+            '*values/Variants%21A%3AA*' => Http::response(['values' => [['ID'], [(string) $variant->id]]]),
+            '*values:batchUpdate*' => Http::response(['totalUpdatedRows' => 1]),
+            '*:append*' => Http::response(['updates' => []]),
+        ]);
+
+        Artisan::call('sheets:backfill');
+
+        Http::assertSent(function ($request) {
+            if (! str_contains($request->url(), 'values:batchUpdate')) {
+                return false;
+            }
+
+            return collect($request->data()['data'] ?? [])
+                ->pluck('range')
+                ->contains('Products!A2');
+        });
+
+        Http::assertNotSent(fn ($request) => str_contains($request->url(), 'Products') && str_contains($request->url(), ':append'));
     }
 
     public function test_a_super_admin_can_trigger_the_backfill_from_the_settings_page(): void

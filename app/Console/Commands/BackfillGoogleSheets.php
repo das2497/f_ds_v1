@@ -28,20 +28,21 @@ class BackfillGoogleSheets extends Command
             return self::FAILURE;
         }
 
+        // Each chunk goes out as one or two batched write calls (see
+        // GoogleSheetsService::bulkUpsert*()) instead of one API call per
+        // row — a one-call-per-row backfill blows through Google's
+        // per-minute Sheets API quota the moment the catalog has more
+        // than a few dozen products.
         $productCount = 0;
-        Product::query()->orderBy('id')->chunk(50, function ($products) use ($sheets, &$productCount) {
-            foreach ($products as $product) {
-                $sheets->upsertProduct($product);
-                $productCount++;
-            }
+        Product::query()->orderBy('id')->chunk(200, function ($products) use ($sheets, &$productCount) {
+            $sheets->bulkUpsertProducts($products);
+            $productCount += $products->count();
         });
 
         $variantCount = 0;
-        ProductVariant::query()->orderBy('id')->chunk(100, function ($variants) use ($sheets, &$variantCount) {
-            foreach ($variants as $variant) {
-                $sheets->upsertVariant($variant);
-                $variantCount++;
-            }
+        ProductVariant::query()->orderBy('id')->chunk(200, function ($variants) use ($sheets, &$variantCount) {
+            $sheets->bulkUpsertVariants($variants);
+            $variantCount += $variants->count();
         });
 
         $this->info("Pushed {$productCount} products and {$variantCount} variants to the Sheet.");

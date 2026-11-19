@@ -18,6 +18,17 @@ use RuntimeException;
  * blew past this app's shared-hosting composer install limits on deploy.
  * Plain PHP + the Http facade keeps this testable with Http::fake() like
  * the other Vendor services, with zero extra dependencies.
+ *
+ * Google's Sheets API enforces a per-minute read/write quota, so a single
+ * row-at-a-time call pattern (one "does this id already have a row?"
+ * read, plus one write, per product) blows through it the moment more
+ * than a few dozen rows are touched in one request — exactly what a full
+ * backfill does. Two things keep this under quota: the id→row map and
+ * header-exists check are read once per sheet and cached on the instance
+ * (cheap for a single Observer-triggered row, since that's the only
+ * lookup it needs anyway), and the bulk*() methods batch many rows into
+ * one write call via Sheets' own batchUpdate/append-multiple-rows
+ * support instead of one HTTP call per row.
  */
 class GoogleSheetsService
 {
@@ -31,8 +42,17 @@ class GoogleSheetsService
 
     private const BASE_URL = 'https://sheets.googleapis.com/v4/spreadsheets';
 
+    /** Rows per write call when bulk-pushing, to stay under the API's request-size limits. */
+    private const BULK_CHUNK_SIZE = 200;
+
     /** @var array<int, array{sheetId: int, title: string}>|null */
     private ?array $sheetMeta = null;
+
+    /** @var array<string, true> sheet title => header row already verified this instance */
+    private array $headerChecked = [];
+
+    /** @var array<string, array<string, int>> sheet title => [row id (string) => 1-based row number] */
+    private array $rowIndex = [];
 
     public function configured(): bool
     {
@@ -41,17 +61,7 @@ class GoogleSheetsService
 
     public function upsertProduct(Product $product): void
     {
-        $this->upsertRow(self::PRODUCTS_SHEET, self::PRODUCT_HEADERS, $product->id, [
-            'ID' => $product->id,
-            'Title' => $product->title,
-            'Description' => trim(strip_tags((string) $product->description)),
-            'Price' => (float) $product->price,
-            'Compare At Price' => $product->compare_at_price !== null ? (float) $product->compare_at_price : '',
-            'Active' => $product->is_active ? 'TRUE' : 'FALSE',
-            'Source Vendor' => (string) $product->source_vendor,
-            'Updated At' => optional($product->updated_at)->toDateTimeString(),
-            'Sync Status' => '',
-        ]);
+        $this->upsertRow(self::PRODUCTS_SHEET, self::PRODUCT_HEADERS, $product->id, $this->productRow($product));
     }
 
     public function deleteProduct(int $productId): void
@@ -61,7 +71,67 @@ class GoogleSheetsService
 
     public function upsertVariant(ProductVariant $variant): void
     {
-        $this->upsertRow(self::VARIANTS_SHEET, self::VARIANT_HEADERS, $variant->id, [
+        $this->upsertRow(self::VARIANTS_SHEET, self::VARIANT_HEADERS, $variant->id, $this->variantRow($variant));
+    }
+
+    public function deleteVariant(int $variantId): void
+    {
+        $this->deleteRow(self::VARIANTS_SHEET, $variantId);
+    }
+
+    /**
+     * Pushes many products in a handful of batched write calls instead of
+     * one call per product — see the class docblock.
+     *
+     * @param  iterable<Product>  $products
+     */
+    public function bulkUpsertProducts(iterable $products): void
+    {
+        $rows = [];
+        foreach ($products as $product) {
+            $rows[$product->id] = $this->productRow($product);
+        }
+
+        $this->bulkUpsert(self::PRODUCTS_SHEET, self::PRODUCT_HEADERS, $rows);
+    }
+
+    /**
+     * @param  iterable<ProductVariant>  $variants
+     */
+    public function bulkUpsertVariants(iterable $variants): void
+    {
+        $rows = [];
+        foreach ($variants as $variant) {
+            $rows[$variant->id] = $this->variantRow($variant);
+        }
+
+        $this->bulkUpsert(self::VARIANTS_SHEET, self::VARIANT_HEADERS, $rows);
+    }
+
+    /**
+     * @return array<string, mixed> keyed by header label
+     */
+    private function productRow(Product $product): array
+    {
+        return [
+            'ID' => $product->id,
+            'Title' => $product->title,
+            'Description' => trim(strip_tags((string) $product->description)),
+            'Price' => (float) $product->price,
+            'Compare At Price' => $product->compare_at_price !== null ? (float) $product->compare_at_price : '',
+            'Active' => $product->is_active ? 'TRUE' : 'FALSE',
+            'Source Vendor' => (string) $product->source_vendor,
+            'Updated At' => optional($product->updated_at)->toDateTimeString(),
+            'Sync Status' => '',
+        ];
+    }
+
+    /**
+     * @return array<string, mixed> keyed by header label
+     */
+    private function variantRow(ProductVariant $variant): array
+    {
+        return [
             'ID' => $variant->id,
             'Product ID' => $variant->product_id,
             'SKU' => $variant->sku,
@@ -74,12 +144,7 @@ class GoogleSheetsService
             'Active' => $variant->is_active ? 'TRUE' : 'FALSE',
             'Updated At' => optional($variant->updated_at)->toDateTimeString(),
             'Sync Status' => '',
-        ]);
-    }
-
-    public function deleteVariant(int $variantId): void
-    {
-        $this->deleteRow(self::VARIANTS_SHEET, $variantId);
+        ];
     }
 
     /**
@@ -100,6 +165,45 @@ class GoogleSheetsService
         }
 
         $this->http()->post($this->valuesUrl("{$sheet}!A1", append: true), ['values' => [$ordered]]);
+    }
+
+    /**
+     * @param  array<int, string>  $headers
+     * @param  array<int, array<string, mixed>>  $rowsById  keyed by DB id
+     */
+    private function bulkUpsert(string $sheet, array $headers, array $rowsById): void
+    {
+        if ($rowsById === []) {
+            return;
+        }
+
+        $this->ensureSheet($sheet, $headers);
+        $index = $this->rowIndex($sheet);
+
+        $updates = [];
+        $appends = [];
+
+        foreach ($rowsById as $id => $values) {
+            $ordered = array_map(fn ($header) => $values[$header] ?? '', $headers);
+            $row = $index[(string) $id] ?? null;
+
+            if ($row !== null) {
+                $updates[] = ['range' => "{$sheet}!A{$row}", 'values' => [$ordered]];
+            } else {
+                $appends[] = $ordered;
+            }
+        }
+
+        foreach (array_chunk($updates, self::BULK_CHUNK_SIZE) as $chunk) {
+            $this->http()->post($this->url('/values:batchUpdate'), [
+                'valueInputOption' => 'USER_ENTERED',
+                'data' => $chunk,
+            ]);
+        }
+
+        foreach (array_chunk($appends, self::BULK_CHUNK_SIZE) as $chunk) {
+            $this->http()->post($this->valuesUrl("{$sheet}!A1", append: true), ['values' => $chunk]);
+        }
     }
 
     private function deleteRow(string $sheet, int $id): void
@@ -123,24 +227,43 @@ class GoogleSheetsService
                 ],
             ]],
         ]);
+
+        // Every row below the deleted one just shifted up by one — the
+        // cached positions are no longer trustworthy, so drop them rather
+        // than risk writing to the wrong row later in this same instance.
+        unset($this->rowIndex[$sheet]);
     }
 
     /**
-     * Column A holds the row's DB id — read the whole column and match on
-     * it, rather than trusting row position, since rows get sorted or
-     * reordered by hand in the sheet.
+     * Column A holds each row's DB id. Read once per sheet per instance
+     * and cache it — re-reading the whole column before every single row
+     * write is what tripped Google's read-request quota during a
+     * multi-hundred-row backfill.
+     *
+     * @return array<string, int> id (string) => 1-based row number
      */
-    private function findRow(string $sheet, int $id): ?int
+    private function rowIndex(string $sheet): array
     {
+        if (isset($this->rowIndex[$sheet])) {
+            return $this->rowIndex[$sheet];
+        }
+
         $column = $this->http()->get($this->readValuesUrl("{$sheet}!A:A"))->json('values', []);
 
-        foreach ($column as $index => $cell) {
-            if ((string) ($cell[0] ?? '') === (string) $id) {
-                return $index + 1;
+        $index = [];
+        foreach ($column as $i => $cell) {
+            $id = (string) ($cell[0] ?? '');
+            if ($id !== '') {
+                $index[$id] = $i + 1;
             }
         }
 
-        return null;
+        return $this->rowIndex[$sheet] = $index;
+    }
+
+    private function findRow(string $sheet, int $id): ?int
+    {
+        return $this->rowIndex($sheet)[(string) $id] ?? null;
     }
 
     private function sheetId(string $title): ?int
@@ -159,6 +282,10 @@ class GoogleSheetsService
      */
     private function ensureSheet(string $sheet, array $headers): void
     {
+        if (isset($this->headerChecked[$sheet])) {
+            return;
+        }
+
         if ($this->sheetId($sheet) === null) {
             $this->http()->post($this->url(':batchUpdate'), [
                 'requests' => [['addSheet' => ['properties' => ['title' => $sheet]]]],
@@ -171,6 +298,8 @@ class GoogleSheetsService
         if ($headerRow !== $headers) {
             $this->http()->put($this->valuesUrl("{$sheet}!A1"), ['values' => [$headers]]);
         }
+
+        $this->headerChecked[$sheet] = true;
     }
 
     /**
