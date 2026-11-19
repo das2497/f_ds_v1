@@ -28,8 +28,10 @@
                         <td>
                             @if ($candidate->vendor === 'printful')
                                 <span class="badge rounded-pill" style="background:#EDE9FE;color:#6D28D9">Printful</span>
-                            @else
+                            @elseif ($candidate->vendor === 'cj')
                                 <span class="badge rounded-pill" style="background:#DBEAFE;color:#1E40AF">CJDropshipping</span>
+                            @else
+                                <span class="badge rounded-pill" style="background:#FEF3C7;color:#92400E">AliExpress</span>
                             @endif
                         </td>
                         <td>${{ number_format($candidate->base_cost, 2) }}</td>

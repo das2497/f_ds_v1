@@ -128,29 +128,29 @@
                                     <tr>
                                         <td><input type="checkbox" name="variants[{{ $i }}][list]" value="1" checked class="js-variant-check"></td>
                                         <td>
-                                            <img src="{{ $variant['image'] ?? $candidate->preview_image_url ?? 'https://placehold.co/48x48/F8FAFC/64748B?text=No+Image' }}" class="js-variant-thumb" style="width:44px;height:44px;object-fit:cover;border-radius:6px;border:1px solid var(--color-border)" alt="{{ $variant['option_label'] }}">
+                                            <img src="{{ $variant['image'] ?? $candidate->preview_image_url ?? 'https://placehold.co/48x48/F8FAFC/64748B?text=No+Image' }}" class="js-variant-thumb" style="width:44px;height:44px;object-fit:cover;border-radius:6px;border:1px solid var(--color-border)" alt="{{ $variant['option_label'] ?? '' }}">
                                             <input type="file" name="variants[{{ $i }}][image]" accept="image/jpeg,image/png,image/webp" class="form-control form-control-sm mt-1 js-variant-image-input" style="font-size:0.7rem">
                                             <input type="hidden" name="variants[{{ $i }}][vendor_image]" value="{{ $variant['image'] ?? '' }}">
                                         </td>
                                         <td>
-                                            <input type="text" name="variants[{{ $i }}][option_label]" class="form-control form-control-sm" value="{{ $variant['option_label'] }}" required>
+                                            <input type="text" name="variants[{{ $i }}][option_label]" class="form-control form-control-sm" value="{{ $variant['option_label'] ?? '' }}" required>
                                         </td>
                                         <td>
-                                            <input type="text" name="variants[{{ $i }}][color]" class="form-control form-control-sm" value="{{ $variant['color'] }}" style="width:90px">
+                                            <input type="text" name="variants[{{ $i }}][color]" class="form-control form-control-sm" value="{{ $variant['color'] ?? '' }}" style="width:90px">
                                         </td>
                                         <td>
-                                            <input type="text" name="variants[{{ $i }}][size]" class="form-control form-control-sm" value="{{ $variant['size'] }}" style="width:90px">
+                                            <input type="text" name="variants[{{ $i }}][size]" class="form-control form-control-sm" value="{{ $variant['size'] ?? '' }}" style="width:90px">
                                         </td>
                                         <td class="small text-muted-slate">
-                                            {{ $variant['vendor_sku'] }}
-                                            <input type="hidden" name="variants[{{ $i }}][vendor_sku]" value="{{ $variant['vendor_sku'] }}">
-                                            <input type="hidden" name="variants[{{ $i }}][cost_price]" value="{{ $variant['cost_price'] }}">
+                                            {{ $variant['vendor_sku'] ?? '' }}
+                                            <input type="hidden" name="variants[{{ $i }}][vendor_sku]" value="{{ $variant['vendor_sku'] ?? '' }}">
+                                            <input type="hidden" name="variants[{{ $i }}][cost_price]" value="{{ $variant['cost_price'] ?? 0 }}">
                                         </td>
                                         <td>
                                             <input type="text" name="variants[{{ $i }}][sku]" class="form-control form-control-sm" value="{{ $skuBase }}-{{ $i + 1 }}" required style="width:160px">
                                         </td>
                                         <td>
-                                            <input type="number" step="0.01" min="0" name="variants[{{ $i }}][weight_lb]" class="form-control form-control-sm" value="{{ $variant['weight_lb'] }}" style="width:80px">
+                                            <input type="number" step="0.01" min="0" name="variants[{{ $i }}][weight_lb]" class="form-control form-control-sm" value="{{ $variant['weight_lb'] ?? '' }}" style="width:80px">
                                         </td>
                                         <td>
                                             <div class="input-group input-group-sm" style="width:120px">

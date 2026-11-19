@@ -7,10 +7,20 @@
     "default_popup": "popup.html",
     "default_title": "Import to Felixes USA"
   },
-  "permissions": ["activeTab", "scripting", "storage"],
+  "permissions": ["activeTab", "scripting", "storage", "tabs"],
   "host_permissions": [
     "https://*.aliexpress.com/*",
     "https://*.aliexpress.us/*",
     "https://shobley.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://*.aliexpress.com/*", "https://*.aliexpress.us/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
   ]
 }
