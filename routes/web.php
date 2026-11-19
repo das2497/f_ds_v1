@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\HomepageSectionController;
 use App\Http\Controllers\Admin\MaintenanceController as AdminMaintenanceController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
+use App\Http\Controllers\Admin\PricingSettingsController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Admin\ProductDesignController;
 use App\Http\Controllers\Admin\RefundController as AdminRefundController;
@@ -209,6 +210,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:super-admin'])
     Route::get('/settings-gateways', [AdminSettingsController::class, 'index'])->name('settings-gateways');
     Route::put('/settings-gateways', [AdminSettingsController::class, 'update'])->name('settings-gateways.update');
     Route::post('/settings-gateways/google-sheets-backfill', [AdminSettingsController::class, 'backfillGoogleSheets'])->name('settings-gateways.google-sheets-backfill');
+
+    Route::get('/pricing-settings', [PricingSettingsController::class, 'index'])->name('pricing-settings');
+    Route::put('/pricing-settings', [PricingSettingsController::class, 'update'])->name('pricing-settings.update');
 
     Route::get('/audit-logs', [AdminAuditLogController::class, 'index'])->name('audit-logs');
 

@@ -151,6 +151,7 @@
             var fetchedRow = document.getElementById('fetchedImagesRow');
             var tbody = document.getElementById('variantRows');
             var addVariantButton = document.getElementById('addVariantRow');
+            var profitMarginPercent = {{ $profitMarginPercent }};
             var titleField = document.querySelector('#manualProductForm [name="title"]');
             var descSurface = document.querySelector('[data-rte-surface]');
             var descSource = document.getElementById('descriptionField');
@@ -202,7 +203,7 @@
                     '<td><input type="text" name="variants[' + i + '][size]" class="form-control form-control-sm js-variant-size" style="width:90px"></td>' +
                     '<td><input type="text" name="variants[' + i + '][sku]" class="form-control form-control-sm" placeholder="SHB-..." style="width:160px" required></td>' +
                     '<td><input type="number" step="0.01" min="0" name="variants[' + i + '][cost_price]" class="form-control form-control-sm js-variant-cost-price" style="width:90px" required></td>' +
-                    '<td><div class="input-group input-group-sm" style="width:110px"><span class="input-group-text">$</span><input type="number" step="0.01" min="0" name="variants[' + i + '][price]" class="form-control form-control-sm"></div></td>' +
+                    '<td><div class="input-group input-group-sm" style="width:110px"><span class="input-group-text">$</span><input type="number" step="0.01" min="0" name="variants[' + i + '][price]" class="form-control form-control-sm js-variant-price"></div></td>' +
                     '<td><input type="number" step="0.01" min="0" name="variants[' + i + '][weight_lb]" class="form-control form-control-sm js-variant-weight" style="width:80px"></td>' +
                     '<td><button type="button" class="btn-icon btn-icon-danger js-remove-variant" title="Remove"><i class="bi bi-trash3"></i></button></td>';
 
@@ -221,6 +222,32 @@
                     }
                 });
 
+                // Suggests this row's retail price from its own cost price
+                // using the shop's configured profit margin — only while
+                // the admin hasn't typed their own price for this row.
+                var costInput = tr.querySelector('.js-variant-cost-price');
+                var priceInput = tr.querySelector('.js-variant-price');
+
+                function suggestPrice() {
+                    var cost = parseFloat(costInput.value);
+                    if (isNaN(cost) || cost < 0) {
+                        return;
+                    }
+                    if (priceInput.value !== '' && priceInput.value !== priceInput.dataset.autoPrice) {
+                        return;
+                    }
+                    var suggested = (cost * (1 + profitMarginPercent / 100)).toFixed(2);
+                    priceInput.value = suggested;
+                    priceInput.dataset.autoPrice = suggested;
+                }
+
+                costInput.addEventListener('input', suggestPrice);
+                priceInput.addEventListener('input', function () {
+                    if (priceInput.value !== priceInput.dataset.autoPrice) {
+                        delete priceInput.dataset.autoPrice;
+                    }
+                });
+
                 if (prefill) {
                     tr.querySelector('.js-variant-option-label').value = prefill.option_label || '';
                     tr.querySelector('.js-variant-color').value = prefill.color || '';
@@ -231,6 +258,7 @@
                         tr.querySelector('.js-variant-vendor-image').value = prefill.image;
                         tr.querySelector('.js-variant-thumb').src = prefill.image;
                     }
+                    suggestPrice();
                 }
 
                 return tr;

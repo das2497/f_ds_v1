@@ -76,6 +76,7 @@ class ProductController extends Controller
         // unsanitized HTML sitting in its raw_payload snapshot. Cheap and
         // idempotent on already-clean HTML.
         $suggestedDescription = DescriptionSanitizer::sanitize($candidate->raw_payload['description'] ?? null);
+        $profitMarginPercent = PricingSettingsController::profitMarginPercent();
 
         return view('admin.products.create', [
             'candidate' => $candidate,
@@ -83,6 +84,8 @@ class ProductController extends Controller
             'suggestedCategoryId' => $categoryMatch['category_id'],
             'suggestedSubcategoryId' => $categoryMatch['subcategory_id'],
             'suggestedDescription' => $suggestedDescription,
+            'profitMarginPercent' => $profitMarginPercent,
+            'suggestedPrice' => round($candidate->base_cost * (1 + $profitMarginPercent / 100), 2),
             'designPlacements' => $candidate->vendor === 'printful'
                 ? $this->printful->getPrintfileTemplate($candidate->vendor_external_id)
                 : [],
@@ -165,8 +168,9 @@ class ProductController extends Controller
     public function createManual(): View
     {
         $categories = Category::with('subcategories')->orderBy('sort_order')->get();
+        $profitMarginPercent = PricingSettingsController::profitMarginPercent();
 
-        return view('admin.products.create-manual', compact('categories'));
+        return view('admin.products.create-manual', compact('categories', 'profitMarginPercent'));
     }
 
     public function storeManual(Request $request): RedirectResponse
@@ -427,8 +431,9 @@ class ProductController extends Controller
             $pickableImages = collect([$product->vendorProductCandidate->preview_image_url])->merge($pickableImages)->unique()->values();
         }
         $pickableImages = collect($product->images ?? [])->merge($pickableImages)->unique()->values();
+        $profitMarginPercent = PricingSettingsController::profitMarginPercent();
 
-        return view('admin.products.edit', compact('product', 'categories', 'availableVendorVariants', 'designPlacements', 'pickableImages'));
+        return view('admin.products.edit', compact('product', 'categories', 'availableVendorVariants', 'designPlacements', 'pickableImages', 'profitMarginPercent'));
     }
 
     public function update(Request $request, Product $product): RedirectResponse

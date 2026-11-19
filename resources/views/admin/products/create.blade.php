@@ -6,7 +6,6 @@
     if ($candidate->preview_image_url) {
         $images = collect([$candidate->preview_image_url])->merge($images)->unique()->values();
     }
-    $suggestedPrice = round($candidate->base_cost * 2.5, 2);
     $skuBase = 'SHB-'.strtoupper(\Illuminate\Support\Str::slug(\Illuminate\Support\Str::limit($candidate->title, 12, ''), '-'));
 @endphp
 <x-admin-layout title="Customize & List Product">

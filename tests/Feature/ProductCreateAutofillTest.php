@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\AppSetting;
 use App\Models\Category;
 use App\Models\User;
 use App\Models\VendorProductCandidate;
@@ -102,5 +103,28 @@ class ProductCreateAutofillTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('Select category');
+    }
+
+    public function test_the_suggested_retail_price_uses_the_configured_profit_margin(): void
+    {
+        Category::create(['name' => 'Electronics', 'slug' => 'electronics']);
+        AppSetting::set('pricing.profit_margin_percent', 80);
+
+        $candidate = VendorProductCandidate::create([
+            'vendor' => 'printful',
+            'vendor_external_id' => '555',
+            'raw_payload' => ['variants' => []],
+            'title' => 'Margin Test Product',
+            'base_cost' => 10,
+            'category_hint' => null,
+            'variant_count' => 0,
+            'status' => 'selected',
+        ]);
+
+        $response = $this->actingAs($this->admin())->get(route('admin.products.create', $candidate));
+
+        $response->assertOk();
+        // base_cost 10 * (1 + 80/100) = 18.00, not the old hardcoded 2.5x (25.00).
+        $response->assertSee('value="18"', false);
     }
 }

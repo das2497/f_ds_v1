@@ -205,7 +205,7 @@
                                             <td>
                                                 <div class="input-group input-group-sm" style="width:120px">
                                                     <span class="input-group-text">$</span>
-                                                    <input type="number" step="0.01" min="0" name="new_variants[{{ $i }}][price]" class="form-control form-control-sm" placeholder="{{ number_format($product->price, 2) }}">
+                                                    <input type="number" step="0.01" min="0" name="new_variants[{{ $i }}][price]" class="form-control form-control-sm" value="{{ isset($variant['cost_price']) ? number_format($variant['cost_price'] * (1 + $profitMarginPercent / 100), 2) : '' }}" placeholder="{{ number_format($product->price, 2) }}">
                                                 </div>
                                             </td>
                                         </tr>
@@ -457,6 +457,7 @@
             var tbody = document.getElementById('customVariantRows');
             var addButton = document.getElementById('addCustomVariantRow');
             var rowCount = {{ $customVariantStart }};
+            var profitMarginPercent = {{ $profitMarginPercent }};
 
             function addRow() {
                 var i = rowCount++;
@@ -471,8 +472,8 @@
                     '<td><input type="text" name="new_variants[' + i + '][color]" class="form-control form-control-sm" style="width:90px"></td>' +
                     '<td><input type="text" name="new_variants[' + i + '][size]" class="form-control form-control-sm" style="width:90px"></td>' +
                     '<td><input type="text" name="new_variants[' + i + '][sku]" class="form-control form-control-sm" placeholder="SHB-..." style="width:160px" required></td>' +
-                    '<td><input type="number" step="0.01" min="0" name="new_variants[' + i + '][cost_price]" class="form-control form-control-sm" style="width:90px" required></td>' +
-                    '<td><div class="input-group input-group-sm" style="width:110px"><span class="input-group-text">$</span><input type="number" step="0.01" min="0" name="new_variants[' + i + '][price]" class="form-control form-control-sm"></div></td>' +
+                    '<td><input type="number" step="0.01" min="0" name="new_variants[' + i + '][cost_price]" class="form-control form-control-sm js-variant-cost-price" style="width:90px" required></td>' +
+                    '<td><div class="input-group input-group-sm" style="width:110px"><span class="input-group-text">$</span><input type="number" step="0.01" min="0" name="new_variants[' + i + '][price]" class="form-control form-control-sm js-variant-price"></div></td>' +
                     '<td><input type="number" step="0.01" min="0" name="new_variants[' + i + '][weight_lb]" class="form-control form-control-sm" style="width:80px"></td>' +
                     '<td><button type="button" class="btn-icon btn-icon-danger js-remove-custom-variant" title="Remove"><i class="bi bi-trash3"></i></button></td>';
 
@@ -487,6 +488,32 @@
 
                 tr.querySelector('.js-remove-custom-variant').addEventListener('click', function () {
                     tr.remove();
+                });
+
+                // Suggests this row's price from its own cost using the
+                // shop's configured profit margin, while the admin hasn't
+                // typed their own price for this row.
+                var costInput = tr.querySelector('.js-variant-cost-price');
+                var priceInput = tr.querySelector('.js-variant-price');
+
+                function suggestPrice() {
+                    var cost = parseFloat(costInput.value);
+                    if (isNaN(cost) || cost < 0) {
+                        return;
+                    }
+                    if (priceInput.value !== '' && priceInput.value !== priceInput.dataset.autoPrice) {
+                        return;
+                    }
+                    var suggested = (cost * (1 + profitMarginPercent / 100)).toFixed(2);
+                    priceInput.value = suggested;
+                    priceInput.dataset.autoPrice = suggested;
+                }
+
+                costInput.addEventListener('input', suggestPrice);
+                priceInput.addEventListener('input', function () {
+                    if (priceInput.value !== priceInput.dataset.autoPrice) {
+                        delete priceInput.dataset.autoPrice;
+                    }
                 });
             }
 
