@@ -3,6 +3,11 @@
 
     $inStock = $product->variants->contains(fn ($v) => $v->stock_status !== 'out_of_stock');
     $defaultVariant = $product->variants->first(fn ($v) => $v->stock_status !== 'out_of_stock') ?? $product->variants->first();
+    // The badge below must track whichever variant is actually selected —
+    // not just whether *some* variant of the product is in stock — so a
+    // shopper who picks an out-of-stock color doesn't see "In Stock" at the
+    // top while "sold out" shows next to the swatches.
+    $defaultVariantStockStatus = $defaultVariant?->stock_status ?? 'out_of_stock';
     // Shown next to "Variant:" when a swatch is selected, built from the
     // variant's own color + size when a color is set — falling back to its
     // name (option_label) when it isn't, since admins often leave color
@@ -20,6 +25,7 @@
         'id' => $v->id,
         'label' => $variantLabel($v),
         'in_stock' => $v->stock_status !== 'out_of_stock',
+        'stock_status' => $v->stock_status,
         // Falls back to a same-group sibling's photo when this variant has
         // none of its own, matching the image shown on its swatch below.
         'image' => $v->image ?? $product->variants->first(fn ($sibling) => $variantGroup($sibling) === $variantGroup($v) && $sibling->image)?->image,
@@ -128,10 +134,12 @@
       @endif
 
       <div class="d-flex align-items-center gap-2 mb-3" data-stock-status aria-live="polite">
-        @if ($inStock)
-          <span class="text-success small"><i class="bi bi-check-circle-fill" aria-hidden="true"></i> In Stock</span>
-        @else
+        @if ($defaultVariantStockStatus === 'out_of_stock')
           <span class="text-danger small"><i class="bi bi-x-circle-fill" aria-hidden="true"></i> Out of Stock</span>
+        @elseif ($defaultVariantStockStatus === 'low_stock')
+          <span class="text-warning small"><i class="bi bi-exclamation-circle-fill" aria-hidden="true"></i> Only a few left</span>
+        @else
+          <span class="text-success small"><i class="bi bi-check-circle-fill" aria-hidden="true"></i> In Stock</span>
         @endif
       </div>
 
@@ -389,7 +397,23 @@
     var currentPriceEl = document.querySelector('[data-current-price]');
     var comparePriceWrap = document.querySelector('[data-compare-price-wrap]');
     var percentOffEl = document.querySelector('[data-percent-off]');
+    var stockStatusEl = document.querySelector('[data-stock-status]');
     if (!hiddenInput) return;
+
+    // Mirrors the three states the badge is initially rendered with
+    // server-side, so picking a different swatch doesn't leave the badge
+    // stuck on whichever variant was selected on page load.
+    function updateStockBadgeForVariant(variant) {
+      if (!variant || !stockStatusEl) return;
+
+      if (variant.stock_status === 'out_of_stock') {
+        stockStatusEl.innerHTML = '<span class="text-danger small"><i class="bi bi-x-circle-fill" aria-hidden="true"></i> Out of Stock</span>';
+      } else if (variant.stock_status === 'low_stock') {
+        stockStatusEl.innerHTML = '<span class="text-warning small"><i class="bi bi-exclamation-circle-fill" aria-hidden="true"></i> Only a few left</span>';
+      } else {
+        stockStatusEl.innerHTML = '<span class="text-success small"><i class="bi bi-check-circle-fill" aria-hidden="true"></i> In Stock</span>';
+      }
+    }
 
     // Keeps the displayed price in sync with whichever variant is selected,
     // falling back to the product's base price for variants without their
@@ -426,6 +450,7 @@
       if (message) message.textContent = variant.in_stock ? '' : 'This option is sold out — try another.';
       updateGalleryForVariant(variant);
       updatePriceForVariant(variant);
+      updateStockBadgeForVariant(variant);
     }
 
     function variantById(id) {
