@@ -78,14 +78,21 @@
 
                 <div class="table-admin p-4 mb-3">
                     <h6 class="mb-3">Variants</h6>
-                    <p class="small text-muted-slate">Edit details, replace images, or untick "Active" to stop selling a variant without deleting it. Leave "Price" blank to use the shop's retail price above for that variant.</p>
+                    <p class="small text-muted-slate">Edit details, replace images, or untick "Active" to stop selling a variant without deleting it. Set "Stock" to "Out of stock" if the vendor runs out — this also blocks any already-placed order for it from being sent to the vendor. Leave "Price" blank to use the shop's retail price above for that variant.</p>
                     <div class="table-responsive">
                         <table class="table table-admin align-middle mb-0">
-                            <thead><tr><th>Active</th><th>Image</th><th>Variant</th><th>Color</th><th>Size</th><th>Internal SKU</th><th>Weight (lb)</th><th>Cost</th><th>Price</th>@if ($product->source_vendor === 'printful')<th>Design</th>@endif<th></th></tr></thead>
+                            <thead><tr><th>Active</th><th>Stock</th><th>Image</th><th>Variant</th><th>Color</th><th>Size</th><th>Internal SKU</th><th>Weight (lb)</th><th>Cost</th><th>Price</th>@if ($product->source_vendor === 'printful')<th>Design</th>@endif<th></th></tr></thead>
                             <tbody>
                                 @foreach ($product->variants as $variant)
                                     <tr>
                                         <td><input type="checkbox" name="existing_variants[{{ $variant->id }}][is_active]" value="1" @checked($variant->is_active)></td>
+                                        <td>
+                                            <select name="existing_variants[{{ $variant->id }}][stock_status]" class="form-select form-select-sm" style="width:110px">
+                                                <option value="in_stock" @selected($variant->stock_status === 'in_stock')>In stock</option>
+                                                <option value="low_stock" @selected($variant->stock_status === 'low_stock')>Low stock</option>
+                                                <option value="out_of_stock" @selected($variant->stock_status === 'out_of_stock')>Out of stock</option>
+                                            </select>
+                                        </td>
                                         <td>
                                             <img src="{{ $variant->image ?? 'https://placehold.co/48x48/F8FAFC/64748B?text=No+Image' }}" class="js-variant-thumb" style="width:44px;height:44px;object-fit:cover;border-radius:6px">
                                             <input type="hidden" name="existing_variants[{{ $variant->id }}][vendor_image]" class="js-variant-vendor-image-input">

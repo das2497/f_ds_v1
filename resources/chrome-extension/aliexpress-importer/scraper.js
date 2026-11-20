@@ -14,14 +14,9 @@
  * `[class*="..."]` to survive the hash suffix changing, but the prefix
  * itself can still rot and need re-checking against a live product page.
  */
-function scrapeAliExpressProduct() {
+async function scrapeAliExpressProduct() {
   const text = (el) => (el && el.textContent ? el.textContent.trim() : '');
-
-  const title = text(
-    document.querySelector('h1[data-pl="product-title"]')
-      || document.querySelector('.product-title-text')
-      || document.querySelector('h1')
-  ) || document.title.replace(/\s*[-|].*$/, '').trim();
+  const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
   // AliExpress shows a crossed-out "original" price next to almost every
   // "New shopper exclusive" / "Black Friday" / "Limited deal" promo price —
@@ -30,15 +25,28 @@ function scrapeAliExpressProduct() {
   // this product actually costs to source. Prefer the original price, and
   // only fall back to "current" when there's no discount at all (nothing
   // struck through — so "current" already IS the real price).
-  const priceText = text(
-    document.querySelector('[class*="price-default--original"]')
-      || document.querySelector('[class*="price--original"]')
-      || document.querySelector('[class*="price-default--current"]')
-      || document.querySelector('[class*="price--current"]')
-      || document.querySelector('[class*="uniform-banner-box-price"]')
-      || document.querySelector('[class*="product-price-value"]')
-  ) || (document.body.innerText.match(/(?:US\s?\$|Rs\.|₹|£|€|\$)\s?[\d,]+\.?\d*/) || [''])[0];
-  const price = parseFloat((priceText.match(/[\d,]+\.?\d*/) || ['0'])[0].replace(/,/g, '')) || 0;
+  // Re-run after selecting each SKU option too, since AliExpress re-renders
+  // this same block with that option's own price.
+  const readPrice = () => {
+    const priceText = text(
+      document.querySelector('[class*="price-default--original"]')
+        || document.querySelector('[class*="price--original"]')
+        || document.querySelector('[class*="price-default--current"]')
+        || document.querySelector('[class*="price--current"]')
+        || document.querySelector('[class*="uniform-banner-box-price"]')
+        || document.querySelector('[class*="product-price-value"]')
+    ) || (document.body.innerText.match(/(?:US\s?\$|Rs\.|₹|£|€|\$)\s?[\d,]+\.?\d*/) || [''])[0];
+
+    return parseFloat((priceText.match(/[\d,]+\.?\d*/) || ['0'])[0].replace(/,/g, '')) || 0;
+  };
+
+  const title = text(
+    document.querySelector('h1[data-pl="product-title"]')
+      || document.querySelector('.product-title-text')
+      || document.querySelector('h1')
+  ) || document.title.replace(/\s*[-|].*$/, '').trim();
+
+  const price = readPrice();
 
   const description = text(
     document.querySelector('[class*="product-description"]')
@@ -67,23 +75,41 @@ function scrapeAliExpressProduct() {
   const images = Array.from(imageSet).slice(0, 10);
 
   // Real AliExpress variant pricing/stock is combinatorial (Color x Size,
-  // ...) and only available by simulating every click, which this
-  // doesn't attempt. Instead this builds one variant per option of the
-  // FIRST property group only (almost always "Color", which is what the
-  // product photos key off), all sharing the scraped base price, and
-  // skips options already marked sold out. Real per-variant cost/price
-  // gets corrected afterwards in the admin panel or synced Sheet.
+  // ...) and the full matrix is only available by simulating every click
+  // across every property group, which this doesn't attempt. Instead this
+  // builds one variant per option of the FIRST property group only (almost
+  // always "Color", which is what the product photos key off), skipping
+  // options already marked sold out. Each option IS clicked, though, so its
+  // own price — which can differ from the base/default option, e.g. a
+  // "Plus size" color variant that costs more — gets read fresh rather than
+  // every variant sharing the page's initial price. Any pricing that still
+  // varies by a second dimension (e.g. Size) gets corrected afterwards in
+  // the admin panel or synced Sheet.
   const variants = [];
   const firstPropertyWrap = document.querySelector('[class*="sku-item--wrap"]');
   if (firstPropertyWrap) {
     const skusContainer = firstPropertyWrap.querySelector('[class*="sku-item--skus"]');
-    (skusContainer ? Array.from(skusContainer.children) : []).forEach((item) => {
+    const items = skusContainer ? Array.from(skusContainer.children) : [];
+    for (const item of items) {
       if (/soldOut/.test(item.className)) {
-        return;
+        continue;
       }
       const img = item.querySelector('img');
       const label = (img && img.getAttribute('alt')) || text(item) || item.getAttribute('title') || 'Option';
       const rawImage = img ? (img.getAttribute('src') || img.getAttribute('data-src') || null) : null;
+
+      let variantPrice = price;
+      try {
+        item.click();
+        await sleep(400);
+        const updated = readPrice();
+        if (updated > 0) {
+          variantPrice = updated;
+        }
+      } catch (e) {
+        // Fall back to the base price if clicking/reading this option fails.
+      }
+
       variants.push({
         option_label: label,
         color: label,
@@ -91,9 +117,9 @@ function scrapeAliExpressProduct() {
         vendor_sku: null,
         weight_lb: null,
         image: rawImage ? rawImage.replace(/_\d+x\d+.*$/, '') : null,
-        cost_price: price,
+        cost_price: variantPrice,
       });
-    });
+    }
   }
   if (variants.length === 0) {
     variants.push({

@@ -460,6 +460,7 @@ class ProductController extends Controller
             'existing_variants.*.cost_price' => ['nullable', 'numeric', 'min:0'],
             'existing_variants.*.price' => ['nullable', 'numeric', 'min:0'],
             'existing_variants.*.weight_lb' => ['nullable', 'numeric', 'min:0'],
+            'existing_variants.*.stock_status' => ['nullable', 'in:in_stock,low_stock,out_of_stock'],
             'existing_variants.*.is_active' => ['nullable', 'boolean'],
             'existing_variants.*.image' => ['nullable', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'existing_variants.*.vendor_image' => ['nullable', 'string'],
@@ -527,6 +528,7 @@ class ProductController extends Controller
                     // but an uploaded file always wins over either — see
                     // resolveVariantImage().
                     'image' => $this->resolveVariantImage($request, "existing_variants.{$variantId}.image", $data['vendor_image'] ?? $variant->image),
+                    'stock_status' => $data['stock_status'] ?? $variant->stock_status,
                     'is_active' => ! empty($data['is_active']),
                 ]);
             }

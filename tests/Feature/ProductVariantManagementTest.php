@@ -194,6 +194,44 @@ class ProductVariantManagementTest extends TestCase
         $this->assertSame(19.5, (float) $variant->fresh()->cost_price);
     }
 
+    public function test_update_can_mark_a_variant_out_of_stock(): void
+    {
+        $category = $this->category();
+        $product = Product::create([
+            'source_vendor' => 'aliexpress',
+            'category_id' => $category->id,
+            'title' => 'Rubber Case for AirPods',
+            'slug' => 'rubber-case-for-airpods',
+            'price' => 25.88,
+            'images' => [],
+            'is_active' => true,
+        ]);
+        $variant = $product->variants()->create([
+            'sku' => 'SHB-CASE-1',
+            'option_label' => 'Black / AirPods Pro',
+            'cost_price' => 10.35,
+            'stock_status' => 'in_stock',
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($this->admin())->put(route('admin.products.update', $product), [
+            'title' => 'Rubber Case for AirPods',
+            'category_id' => $category->id,
+            'price' => 25.88,
+            'existing_variants' => [
+                $variant->id => [
+                    'option_label' => 'Black / AirPods Pro',
+                    'sku' => 'SHB-CASE-1',
+                    'stock_status' => 'out_of_stock',
+                ],
+            ],
+        ]);
+
+        $response->assertRedirect();
+
+        $this->assertSame('out_of_stock', $variant->fresh()->stock_status);
+    }
+
     public function test_update_leaves_a_vendor_products_variant_cost_price_untouched(): void
     {
         $category = $this->category();
