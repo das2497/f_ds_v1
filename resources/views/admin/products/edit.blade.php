@@ -89,7 +89,6 @@
                                         <td>
                                             <select name="existing_variants[{{ $variant->id }}][stock_status]" class="form-select form-select-sm" style="width:110px">
                                                 <option value="in_stock" @selected($variant->stock_status === 'in_stock')>In stock</option>
-                                                <option value="low_stock" @selected($variant->stock_status === 'low_stock')>Low stock</option>
                                                 <option value="out_of_stock" @selected($variant->stock_status === 'out_of_stock')>Out of stock</option>
                                             </select>
                                         </td>

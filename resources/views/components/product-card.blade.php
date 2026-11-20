@@ -4,7 +4,6 @@
     $activeVariants = $product->variants->where('is_active', true);
     $firstVariant = $activeVariants->first(fn ($v) => $v->stock_status !== 'out_of_stock') ?? $activeVariants->first();
     $isOutOfStock = $activeVariants->isEmpty() || $activeVariants->every(fn ($v) => $v->stock_status === 'out_of_stock');
-    $isLowStock = ! $isOutOfStock && $firstVariant?->stock_status === 'low_stock';
     $optionCount = $activeVariants->count();
     $isWishlisted = ($wishlistedIds ?? collect())->contains($product->id);
     $isDiscounted = $product->compare_at_price && $product->compare_at_price > $product->price;
@@ -95,9 +94,7 @@
                 @endif
             </div>
         @endif
-        @if ($isLowStock)
-            <div class="product-card__stock-hint"><i class="bi bi-exclamation-circle-fill" aria-hidden="true"></i> Only a few left</div>
-        @elseif ($optionCount > 1)
+        @if ($optionCount > 1)
             <div class="product-card__options-hint">{{ $optionCount }} options available</div>
         @endif
         @if ($firstVariant && ! $isOutOfStock && $optionCount > 1)

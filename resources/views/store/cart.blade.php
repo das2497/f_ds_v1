@@ -38,7 +38,6 @@
           @foreach ($cart->items as $item)
             @php
                 $isUnavailable = $item->variant->stock_status === 'out_of_stock' || ! $item->variant->is_active;
-                $isLowStock = ! $isUnavailable && $item->variant->stock_status === 'low_stock';
             @endphp
             <div class="cart-item{{ $isUnavailable ? ' cart-item--unavailable' : '' }}"
                  data-cart-item-id="{{ $item->id }}"
@@ -61,8 +60,6 @@
                     @endif
                     @if ($isUnavailable)
                       <div class="small text-danger fw-semibold mt-1"><i class="bi bi-exclamation-triangle-fill"></i> No longer available — please remove to check out</div>
-                    @elseif ($isLowStock)
-                      <div class="small text-danger mt-1"><i class="bi bi-exclamation-circle-fill"></i> Only a few left</div>
                     @endif
                   </div>
                   <div class="text-end flex-shrink-0 ms-2">

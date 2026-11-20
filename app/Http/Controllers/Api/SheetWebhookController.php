@@ -95,7 +95,7 @@ class SheetWebhookController extends Controller
             $data = validator($values, [
                 'Cost Price' => ['required', 'numeric', 'min:0'],
                 'Price' => ['nullable', 'numeric', 'min:0'],
-                'Stock Status' => ['required', 'in:in_stock,low_stock,out_of_stock'],
+                'Stock Status' => ['required', 'in:in_stock,out_of_stock'],
                 'Active' => ['required'],
             ])->validate();
         } catch (ValidationException $e) {

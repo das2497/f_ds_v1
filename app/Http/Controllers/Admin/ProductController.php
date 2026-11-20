@@ -460,7 +460,7 @@ class ProductController extends Controller
             'existing_variants.*.cost_price' => ['nullable', 'numeric', 'min:0'],
             'existing_variants.*.price' => ['nullable', 'numeric', 'min:0'],
             'existing_variants.*.weight_lb' => ['nullable', 'numeric', 'min:0'],
-            'existing_variants.*.stock_status' => ['nullable', 'in:in_stock,low_stock,out_of_stock'],
+            'existing_variants.*.stock_status' => ['nullable', 'in:in_stock,out_of_stock'],
             'existing_variants.*.is_active' => ['nullable', 'boolean'],
             'existing_variants.*.image' => ['nullable', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'existing_variants.*.vendor_image' => ['nullable', 'string'],
