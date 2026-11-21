@@ -465,9 +465,9 @@ body {
   .featured-products-grid { grid-template-columns: repeat(7, 1fr); gap: 1rem; }
 }
 
-/* ---------- Products grid (listing page) — same approach, but the
-   sidebar filter column (col-lg-9) narrows the available width, so the
-   7-column step is pushed out to the xxl breakpoint ---------- */
+/* ---------- Products grid (listing page) — capped at 5 columns so cards
+   stay a comfortable size even on wide screens, rather than scaling up
+   to 6–7 narrow ones ---------- */
 
 .products-grid {
   display: grid;
@@ -481,13 +481,7 @@ body {
   .products-grid { grid-template-columns: repeat(4, 1fr); }
 }
 @media (min-width: 992px) {
-  .products-grid { grid-template-columns: repeat(5, 1fr); gap: 1rem; }
-}
-@media (min-width: 1200px) {
-  .products-grid { grid-template-columns: repeat(6, 1fr); }
-}
-@media (min-width: 1400px) {
-  .products-grid { grid-template-columns: repeat(7, 1fr); }
+  .products-grid { grid-template-columns: repeat(5, 1fr); gap: 1.25rem; }
 }
 
 /* ---------- Product Card (ui_design_notes.txt §0 — Wayfair pattern) ---------- */
