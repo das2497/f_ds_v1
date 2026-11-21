@@ -240,28 +240,6 @@
         @endauth
       </div>
       <p class="small text-muted-slate mb-4" data-variant-message role="status"></p>
-
-      <div class="card-surface p-3 mb-4">
-        <h2 class="visually-hidden">Shipping, payment and cancellation</h2>
-        <div class="d-flex align-items-start gap-2 mb-2">
-          <i class="bi bi-truck text-accent" aria-hidden="true"></i>
-          <div class="small">Fast &amp; reliable delivery across USA — free over ${{ config('store.free_shipping_threshold') }}</div>
-        </div>
-        <div class="d-flex align-items-start gap-2 mb-2">
-          <i class="bi bi-shield-check text-accent" aria-hidden="true"></i>
-          <div class="small">Secure checkout via Stripe</div>
-        </div>
-        <div class="d-flex align-items-start gap-2 mb-2">
-          <i class="bi bi-arrow-counterclockwise text-accent" aria-hidden="true"></i>
-          <div class="small">Free cancellation within 2 hours of order placement</div>
-        </div>
-        <div class="d-flex align-items-start gap-2">
-          <i class="bi bi-question-circle text-accent" aria-hidden="true"></i>
-          <div class="small">
-            See our <a href="{{ route('policies.shipping-refund') }}" class="text-accent">shipping &amp; refund policy</a>
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 
