@@ -640,9 +640,10 @@ body {
   /* .btn-accent's own padding is sized for full-width buttons elsewhere
      and overrides Bootstrap's .btn-sm — at a narrow card width that makes
      this pill tall enough to wrap its label and look like a bulbous
-     capsule, so it gets its own compact sizing instead. */
-  padding: 0.55rem 0.75rem;
-  font-size: 0.82rem;
+     capsule, so it gets its own compact sizing instead. Kept deliberately
+     small so the price above reads as the card's main focal point. */
+  padding: 0.4rem 0.65rem;
+  font-size: 0.76rem;
   margin-top: auto;
 }
 .product-card__title {
@@ -667,13 +668,13 @@ body {
 .product-card__price-current {
   font-weight: 800;
   color: var(--color-primary);
-  font-size: 1.1rem;
-  letter-spacing: -0.01em;
+  font-size: 1.4rem;
+  letter-spacing: -0.02em;
 }
 .product-card__price-original {
   color: var(--color-text-muted);
   text-decoration: line-through;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   margin-left: 0.4rem;
 }
 
