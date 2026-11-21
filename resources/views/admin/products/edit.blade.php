@@ -98,7 +98,7 @@
                                             @if ($pickableImages->isNotEmpty())
                                                 <button type="button" class="btn btn-sm btn-outline-secondary mt-1 js-choose-vendor-image" data-bs-toggle="modal" data-bs-target="#chooseVendorImageModal" style="font-size:0.7rem;padding:2px 6px">Choose</button>
                                             @endif
-                                            <input type="file" name="existing_variants[{{ $variant->id }}][image]" accept="image/jpeg,image/png,image/webp" class="form-control form-control-sm mt-1 js-variant-image-input" style="font-size:0.7rem">
+                                            <input type="file" name="existing_variants[{{ $variant->id }}][image]" accept="image/jpeg,image/png,image/webp" class="form-control form-control-sm mt-1 js-variant-image-input js-crop-input" style="font-size:0.7rem" data-template-url="{{ $imageTemplateUrl }}">
                                         </td>
                                         <td>
                                             <input type="text" name="existing_variants[{{ $variant->id }}][option_label]" class="form-control form-control-sm" value="{{ $variant->option_label }}" required>
@@ -195,7 +195,7 @@
                                             <td><input type="checkbox" name="new_variants[{{ $i }}][add]" value="1"></td>
                                             <td>
                                                 <img src="{{ $variant['image'] ?? 'https://placehold.co/48x48/F8FAFC/64748B?text=No+Image' }}" class="js-variant-thumb" style="width:44px;height:44px;object-fit:cover;border-radius:6px">
-                                                <input type="file" name="new_variants[{{ $i }}][image]" accept="image/jpeg,image/png,image/webp" class="form-control form-control-sm mt-1 js-variant-image-input" style="font-size:0.7rem">
+                                                <input type="file" name="new_variants[{{ $i }}][image]" accept="image/jpeg,image/png,image/webp" class="form-control form-control-sm mt-1 js-variant-image-input js-crop-input" style="font-size:0.7rem" data-template-url="{{ $imageTemplateUrl }}">
                                                 <input type="hidden" name="new_variants[{{ $i }}][vendor_image]" value="{{ $variant['image'] ?? '' }}">
                                             </td>
                                             <td><input type="text" name="new_variants[{{ $i }}][option_label]" class="form-control form-control-sm" value="{{ $variant['option_label'] ?? '' }}"></td>
@@ -257,7 +257,7 @@
                         @endforelse
                     </div>
                     <label class="form-label small">Upload More Images</label>
-                    <input type="file" name="custom_images[]" accept="image/jpeg,image/png,image/webp" multiple class="form-control form-control-sm js-image-input" id="customImages">
+                    <input type="file" name="custom_images[]" accept="image/jpeg,image/png,image/webp" multiple class="form-control form-control-sm js-image-input js-crop-input" id="customImages" data-template-url="{{ $imageTemplateUrl }}">
                     <div class="form-text">JPG/PNG/WEBP, 5MB max per image.</div>
                     <div class="small mt-2" id="imageCounter"></div>
                 </div>
@@ -325,6 +325,9 @@
             @method('DELETE')
         </form>
     @endforeach
+
+    @include('admin.products._image-crop-modal')
+    @vite(['resources/js/admin-image-crop.js'])
 
     <script>
         (function () {
@@ -464,6 +467,7 @@
             var addButton = document.getElementById('addCustomVariantRow');
             var rowCount = {{ $customVariantStart }};
             var profitMarginPercent = {{ $profitMarginPercent }};
+            var imageTemplateUrl = @json($imageTemplateUrl) || '';
 
             function addRow() {
                 var i = rowCount++;
@@ -472,7 +476,7 @@
                     '<td>' +
                         '<img src="https://placehold.co/48x48/F8FAFC/64748B?text=No+Image" class="js-variant-thumb" style="width:44px;height:44px;object-fit:cover;border-radius:6px;border:1px solid var(--color-border)">' +
                         '<input type="hidden" name="new_variants[' + i + '][add]" value="1">' +
-                        '<input type="file" name="new_variants[' + i + '][image]" accept="image/jpeg,image/png,image/webp" class="form-control form-control-sm mt-1 js-variant-image-input" style="font-size:0.7rem">' +
+                        '<input type="file" name="new_variants[' + i + '][image]" accept="image/jpeg,image/png,image/webp" class="form-control form-control-sm mt-1 js-variant-image-input js-crop-input" style="font-size:0.7rem" data-template-url="' + imageTemplateUrl + '">' +
                     '</td>' +
                     '<td><input type="text" name="new_variants[' + i + '][option_label]" class="form-control form-control-sm" placeholder="e.g. Medium / Blue" required></td>' +
                     '<td><input type="text" name="new_variants[' + i + '][color]" class="form-control form-control-sm" style="width:90px"></td>' +

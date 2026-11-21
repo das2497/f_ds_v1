@@ -13,6 +13,7 @@ export default defineConfig({
                 'resources/js/ai-research-chat.js',
                 'resources/js/vendor-research.js',
                 'resources/js/admin-design-canvas.js',
+                'resources/js/admin-image-crop.js',
             ],
             refresh: true,
         }),

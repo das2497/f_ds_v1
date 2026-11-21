@@ -179,11 +179,9 @@
         </div>
       @else
         <h2 class="visually-hidden">{{ $pageTitle }} results</h2>
-        <div class="row g-4">
+        <div class="products-grid">
           @foreach ($products as $product)
-            <div class="col-6 col-md-4">
-              <x-product-card :product="$product" :eager="$loop->index < 3" />
-            </div>
+            <x-product-card :product="$product" :eager="$loop->index < 3" />
           @endforeach
         </div>
 

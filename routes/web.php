@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CustomerController as AdminCustomerController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\HomepageSectionController;
+use App\Http\Controllers\Admin\ImageTemplateSettingsController;
 use App\Http\Controllers\Admin\MaintenanceController as AdminMaintenanceController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\PricingSettingsController;
@@ -213,6 +214,10 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:super-admin'])
 
     Route::get('/pricing-settings', [PricingSettingsController::class, 'index'])->name('pricing-settings');
     Route::put('/pricing-settings', [PricingSettingsController::class, 'update'])->name('pricing-settings.update');
+
+    Route::get('/image-template-settings', [ImageTemplateSettingsController::class, 'index'])->name('image-template-settings');
+    Route::put('/image-template-settings', [ImageTemplateSettingsController::class, 'update'])->name('image-template-settings.update');
+    Route::delete('/image-template-settings', [ImageTemplateSettingsController::class, 'destroy'])->name('image-template-settings.destroy');
 
     Route::get('/audit-logs', [AdminAuditLogController::class, 'index'])->name('audit-logs');
 

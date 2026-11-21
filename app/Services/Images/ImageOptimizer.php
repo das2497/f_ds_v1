@@ -2,6 +2,7 @@
 
 namespace App\Services\Images;
 
+use App\Http\Controllers\Admin\ImageTemplateSettingsController;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
@@ -9,6 +10,7 @@ use Illuminate\Support\Str;
 use Intervention\Image\Drivers\Gd\Driver;
 use Intervention\Image\Encoders\WebpEncoder;
 use Intervention\Image\ImageManager;
+use Intervention\Image\Interfaces\ImageInterface;
 
 /**
  * Re-encodes admin-uploaded storefront photos as WebP and caps their longest
@@ -23,12 +25,28 @@ class ImageOptimizer
     /**
      * Store an uploaded image, resized and WebP-encoded, and return its
      * disk-relative path — the same shape UploadedFile::store() returns.
+     *
+     * $applyTemplate stamps the admin-configured logo/border overlay (see
+     * ImageTemplateSettingsController) onto the result — only pass true for
+     * a product/variant photo the admin square-cropped in the browser (see
+     * admin-image-crop.js); it stays false for every other caller
+     * (homepage sections, carousel slides, …), whose images aren't
+     * square-cropped and would just get the overlay stretched over them.
      */
-    public function store(UploadedFile $file, string $directory, string $disk = 'public'): string
+    public function store(UploadedFile $file, string $directory, string $disk = 'public', bool $applyTemplate = false): string
     {
         $image = (new ImageManager(new Driver))
             ->decodePath($file->getRealPath())
+            // Rotates pixels to match the EXIF orientation tag *before* that
+            // tag (and the rest of the file's metadata) disappears on
+            // re-encode below — otherwise a phone photo shot in portrait
+            // would re-save sideways once its orientation hint is gone.
+            ->orient()
             ->scaleDown(self::MAX_DIMENSION, self::MAX_DIMENSION);
+
+        if ($applyTemplate) {
+            $this->stampTemplate($image);
+        }
 
         $path = trim($directory, '/').'/'.Str::random(40).'.webp';
 
@@ -38,6 +56,26 @@ class ImageOptimizer
         );
 
         return $path;
+    }
+
+    /**
+     * Stamps the admin-configured border/logo overlay (see
+     * ImageTemplateSettingsController) onto $image in place, stretched to
+     * its exact size. A no-op until an admin has actually uploaded one.
+     */
+    private function stampTemplate(ImageInterface $image): void
+    {
+        $templatePath = ImageTemplateSettingsController::path();
+
+        if (blank($templatePath) || ! Storage::disk('public')->exists($templatePath)) {
+            return;
+        }
+
+        $template = (new ImageManager(new Driver))
+            ->decodePath(Storage::disk('public')->path($templatePath))
+            ->resize($image->width(), $image->height());
+
+        $image->insert($template, 0, 0);
     }
 
     /**

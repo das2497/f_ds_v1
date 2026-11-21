@@ -99,7 +99,7 @@
                         <p class="small text-muted-slate">Upload at least one photo. The first image is the main photo shown on the shop.</p>
                         <div class="row g-2 mb-2" id="fetchedImagesRow"></div>
                         <label class="form-label small">Upload Images</label>
-                        <input type="file" name="custom_images[]" accept="image/jpeg,image/png,image/webp" multiple class="form-control form-control-sm" id="customImages">
+                        <input type="file" name="custom_images[]" accept="image/jpeg,image/png,image/webp" multiple class="form-control form-control-sm js-crop-input" id="customImages" data-template-url="{{ $imageTemplateUrl }}">
                         <div class="form-text">JPG/PNG/WEBP, 5MB max per image.</div>
                         <div class="small mt-2" id="imageCounter"></div>
                     </div>
@@ -123,6 +123,9 @@
             </div>
         </div>
     </form>
+
+    @include('admin.products._image-crop-modal')
+    @vite(['resources/js/admin-image-crop.js'])
 
     <script>
         (function () {
@@ -152,6 +155,7 @@
             var tbody = document.getElementById('variantRows');
             var addVariantButton = document.getElementById('addVariantRow');
             var profitMarginPercent = {{ $profitMarginPercent }};
+            var imageTemplateUrl = @json($imageTemplateUrl) || '';
             var titleField = document.querySelector('#manualProductForm [name="title"]');
             var descSurface = document.querySelector('[data-rte-surface]');
             var descSource = document.getElementById('descriptionField');
@@ -195,7 +199,7 @@
                 tr.innerHTML =
                     '<td>' +
                         '<img src="https://placehold.co/48x48/F8FAFC/64748B?text=No+Image" class="js-variant-thumb" style="width:44px;height:44px;object-fit:cover;border-radius:6px;border:1px solid var(--color-border)">' +
-                        '<input type="file" name="variants[' + i + '][image]" accept="image/jpeg,image/png,image/webp" class="form-control form-control-sm mt-1 js-variant-image-input" style="font-size:0.7rem">' +
+                        '<input type="file" name="variants[' + i + '][image]" accept="image/jpeg,image/png,image/webp" class="form-control form-control-sm mt-1 js-variant-image-input js-crop-input" style="font-size:0.7rem" data-template-url="' + imageTemplateUrl + '">' +
                         '<input type="hidden" name="variants[' + i + '][vendor_image]" class="js-variant-vendor-image">' +
                     '</td>' +
                     '<td><input type="text" name="variants[' + i + '][option_label]" class="form-control form-control-sm js-variant-option-label" placeholder="e.g. Medium / Blue" required></td>' +

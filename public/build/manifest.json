@@ -10,6 +10,10 @@
       "_chart-CyiRuMrX.js"
     ]
   },
+  "_rolldown-runtime-XKyaHtl9.js": {
+    "file": "assets/rolldown-runtime-XKyaHtl9.js",
+    "name": "rolldown-runtime"
+  },
   "node_modules/bootstrap-icons/font/fonts/bootstrap-icons.woff": {
     "file": "assets/bootstrap-icons-BHUGvtHM.woff",
     "src": "node_modules/bootstrap-icons/font/fonts/bootstrap-icons.woff"
@@ -19,7 +23,7 @@
     "src": "node_modules/bootstrap-icons/font/fonts/bootstrap-icons.woff2"
   },
   "resources/css/app.css": {
-    "file": "assets/app-Dynf8zwj.css",
+    "file": "assets/app-DZWCChpM.css",
     "name": "app",
     "names": [
       "app.css"
@@ -37,6 +41,18 @@
     "src": "resources/js/admin-design-canvas.js",
     "isEntry": true
   },
+  "resources/js/admin-image-crop.js": {
+    "file": "assets/admin-image-crop-COneqPan.js",
+    "name": "admin-image-crop",
+    "src": "resources/js/admin-image-crop.js",
+    "isEntry": true,
+    "imports": [
+      "_rolldown-runtime-XKyaHtl9.js"
+    ],
+    "css": [
+      "assets/admin-image-crop-cx_wrqbx.css"
+    ]
+  },
   "resources/js/ai-research-chat.js": {
     "file": "assets/ai-research-chat-BJyDiN_D.js",
     "name": "ai-research-chat",
@@ -44,10 +60,13 @@
     "isEntry": true
   },
   "resources/js/app.js": {
-    "file": "assets/app-ClVX0Bjd.js",
+    "file": "assets/app-BuAJRFw6.js",
     "name": "app",
     "src": "resources/js/app.js",
-    "isEntry": true
+    "isEntry": true,
+    "imports": [
+      "_rolldown-runtime-XKyaHtl9.js"
+    ]
   },
   "resources/js/charts-dashboard.js": {
     "file": "assets/charts-dashboard-DxnriW3W.js",

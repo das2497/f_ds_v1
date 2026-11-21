@@ -128,7 +128,7 @@
                                         <td><input type="checkbox" name="variants[{{ $i }}][list]" value="1" checked class="js-variant-check"></td>
                                         <td>
                                             <img src="{{ $variant['image'] ?? $candidate->preview_image_url ?? 'https://placehold.co/48x48/F8FAFC/64748B?text=No+Image' }}" class="js-variant-thumb" style="width:44px;height:44px;object-fit:cover;border-radius:6px;border:1px solid var(--color-border)" alt="{{ $variant['option_label'] ?? '' }}">
-                                            <input type="file" name="variants[{{ $i }}][image]" accept="image/jpeg,image/png,image/webp" class="form-control form-control-sm mt-1 js-variant-image-input" style="font-size:0.7rem">
+                                            <input type="file" name="variants[{{ $i }}][image]" accept="image/jpeg,image/png,image/webp" class="form-control form-control-sm mt-1 js-variant-image-input js-crop-input" style="font-size:0.7rem" data-template-url="{{ $imageTemplateUrl }}">
                                             <input type="hidden" name="variants[{{ $i }}][vendor_image]" value="{{ $variant['image'] ?? '' }}">
                                         </td>
                                         <td>
@@ -228,7 +228,7 @@
                             @endif
                         </div>
                         <label class="form-label small">Upload Custom Images</label>
-                        <input type="file" name="custom_images[]" accept="image/jpeg,image/png,image/webp" multiple class="form-control form-control-sm js-image-input" id="customImages">
+                        <input type="file" name="custom_images[]" accept="image/jpeg,image/png,image/webp" multiple class="form-control form-control-sm js-image-input js-crop-input" id="customImages" data-template-url="{{ $imageTemplateUrl }}">
                         <div class="form-text">JPG/PNG/WEBP, 5MB max per image.</div>
                         <div class="small mt-2" id="imageCounter"></div>
                     </div>
@@ -252,6 +252,9 @@
             </div>
         </div>
     </form>
+
+    @include('admin.products._image-crop-modal')
+    @vite(['resources/js/admin-image-crop.js'])
 
     <script>
         @php $selectedSubcategoryId = old('subcategory_id', $suggestedSubcategoryId); @endphp

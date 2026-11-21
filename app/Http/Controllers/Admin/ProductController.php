@@ -89,6 +89,7 @@ class ProductController extends Controller
             'designPlacements' => $candidate->vendor === 'printful'
                 ? $this->printful->getPrintfileTemplate($candidate->vendor_external_id)
                 : [],
+            'imageTemplateUrl' => $this->imageTemplateUrl(),
         ]);
     }
 
@@ -169,8 +170,9 @@ class ProductController extends Controller
     {
         $categories = Category::with('subcategories')->orderBy('sort_order')->get();
         $profitMarginPercent = PricingSettingsController::profitMarginPercent();
+        $imageTemplateUrl = $this->imageTemplateUrl();
 
-        return view('admin.products.create-manual', compact('categories', 'profitMarginPercent'));
+        return view('admin.products.create-manual', compact('categories', 'profitMarginPercent', 'imageTemplateUrl'));
     }
 
     public function storeManual(Request $request): RedirectResponse
@@ -432,8 +434,9 @@ class ProductController extends Controller
         }
         $pickableImages = collect($product->images ?? [])->merge($pickableImages)->unique()->values();
         $profitMarginPercent = PricingSettingsController::profitMarginPercent();
+        $imageTemplateUrl = $this->imageTemplateUrl();
 
-        return view('admin.products.edit', compact('product', 'categories', 'availableVendorVariants', 'designPlacements', 'pickableImages', 'profitMarginPercent'));
+        return view('admin.products.edit', compact('product', 'categories', 'availableVendorVariants', 'designPlacements', 'pickableImages', 'profitMarginPercent', 'imageTemplateUrl'));
     }
 
     public function update(Request $request, Product $product): RedirectResponse
@@ -601,10 +604,22 @@ class ProductController extends Controller
         return null;
     }
 
+    /**
+     * The logo/border overlay admin-image-crop.js previews on every photo
+     * crop screen — null until an admin has uploaded one via
+     * ImageTemplateSettingsController.
+     */
+    private function imageTemplateUrl(): ?string
+    {
+        $path = ImageTemplateSettingsController::path();
+
+        return $path ? Storage::disk('public')->url($path) : null;
+    }
+
     private function resolveVariantImage(Request $request, string $fileKey, ?string $fallbackUrl): ?string
     {
         if ($request->hasFile($fileKey)) {
-            return Storage::disk('public')->url($this->imageOptimizer->store($request->file($fileKey), 'products/variants'));
+            return Storage::disk('public')->url($this->imageOptimizer->store($request->file($fileKey), 'products/variants', applyTemplate: true));
         }
 
         return $fallbackUrl ?: null;
@@ -620,7 +635,7 @@ class ProductController extends Controller
         $imageUrls = array_values($selectedUrls);
 
         foreach ($uploadedFiles as $file) {
-            $imageUrls[] = Storage::disk('public')->url($this->imageOptimizer->store($file, 'products'));
+            $imageUrls[] = Storage::disk('public')->url($this->imageOptimizer->store($file, 'products', applyTemplate: true));
         }
 
         return $imageUrls;

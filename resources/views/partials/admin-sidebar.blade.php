@@ -59,6 +59,7 @@
     <a class="nav-link {{ request()->routeIs('admin.staff') ? 'active' : '' }}" href="{{ route('admin.staff') }}"><i class="bi bi-people"></i> Staff Management <span class="super-admin-tag">SA</span></a>
     <a class="nav-link {{ request()->routeIs('admin.settings-gateways') ? 'active' : '' }}" href="{{ route('admin.settings-gateways') }}"><i class="bi bi-key"></i> Gateway Settings <span class="super-admin-tag">SA</span></a>
     <a class="nav-link {{ request()->routeIs('admin.pricing-settings') ? 'active' : '' }}" href="{{ route('admin.pricing-settings') }}"><i class="bi bi-graph-up-arrow"></i> Pricing Settings <span class="super-admin-tag">SA</span></a>
+    <a class="nav-link {{ request()->routeIs('admin.image-template-settings') ? 'active' : '' }}" href="{{ route('admin.image-template-settings') }}"><i class="bi bi-image"></i> Image Template <span class="super-admin-tag">SA</span></a>
     <a class="nav-link {{ request()->routeIs('admin.audit-logs') ? 'active' : '' }}" href="{{ route('admin.audit-logs') }}"><i class="bi bi-journal-text"></i> Audit Logs <span class="super-admin-tag">SA</span></a>
     <a class="nav-link {{ request()->routeIs('admin.maintenance') ? 'active' : '' }}" href="{{ route('admin.maintenance') }}"><i class="bi bi-hdd-stack"></i> Maintenance <span class="super-admin-tag">SA</span></a>
   </nav>
