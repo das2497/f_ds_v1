@@ -678,7 +678,9 @@ body {
    .pdp-gallery-thumbs has no explicit height, so it stretches (flex
    align-items: stretch, the row default) to match .pdp-gallery-main's
    aspect-ratio-driven height, and scrolls internally once thumbs overflow
-   that height instead of growing the gallery taller. */
+   that height instead of growing the gallery taller. A max-height capped
+   at ~5 thumbnails (68px + 8px gap each) keeps that rail from outgrowing
+   the main image on products with many variant photos. */
 .pdp-gallery {
   display: flex;
   align-items: stretch;
@@ -689,8 +691,10 @@ body {
   flex-direction: column;
   flex: 0 0 auto;
   gap: 8px;
+  max-height: 380px;
   overflow-y: auto;
   padding-right: 2px;
+  scrollbar-width: thin;
 }
 .pdp-gallery-main {
   flex: 1 1 auto;
