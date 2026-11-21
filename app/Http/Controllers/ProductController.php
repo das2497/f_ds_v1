@@ -51,7 +51,7 @@ class ProductController extends Controller
             ->when($sort === 'price_desc', fn ($q) => $q->orderByDesc('price'))
             ->when($sort === 'name_asc', fn ($q) => $q->orderBy('title'))
             ->when($sort === 'newest', fn ($q) => $q->latest())
-            ->paginate(12)
+            ->paginate(20)
             ->withQueryString();
 
         if ($request->filled('q')) {
