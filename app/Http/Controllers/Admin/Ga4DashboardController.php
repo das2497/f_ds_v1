@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Services\Analytics\Ga4ReportingService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\View\View;
@@ -56,6 +57,30 @@ class Ga4DashboardController extends Controller
                 'configured' => true,
                 'error' => 'Could not reach the GA4 Data API. Check the property ID and service account access in Gateway Settings.',
             ]);
+        }
+    }
+
+    /**
+     * Polled client-side every few seconds for the "Live Now" indicator —
+     * kept separate from index() so a slow/broken GA4 call here never
+     * breaks the full dashboard page, just the live badge.
+     */
+    public function realtime(): JsonResponse
+    {
+        if (! $this->ga4->configured()) {
+            return response()->json(['configured' => false]);
+        }
+
+        try {
+            return response()->json([
+                'configured' => true,
+                'activeUsers' => $this->ga4->realtimeActiveUsers(),
+                'topPages' => $this->ga4->realtimeTopPages(),
+            ]);
+        } catch (Throwable $e) {
+            report($e);
+
+            return response()->json(['configured' => true, 'error' => true], 502);
         }
     }
 

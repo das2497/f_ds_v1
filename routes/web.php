@@ -144,6 +144,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin|super-ad
     Route::get('/analytics-utm', [AnalyticsUtmController::class, 'index'])->name('analytics-utm');
     Route::get('/analytics-demand', [AnalyticsDemandController::class, 'index'])->name('analytics-demand');
     Route::get('/analytics-ga4', [Ga4DashboardController::class, 'index'])->name('analytics-ga4');
+    Route::get('/analytics-ga4/realtime', [Ga4DashboardController::class, 'realtime'])->name('analytics-ga4.realtime');
 
     Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
     Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');

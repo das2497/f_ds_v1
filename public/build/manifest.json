@@ -23,7 +23,7 @@
     "src": "node_modules/bootstrap-icons/font/fonts/bootstrap-icons.woff2"
   },
   "resources/css/app.css": {
-    "file": "assets/app-B-pWPbwL.css",
+    "file": "assets/app-CkidFhVQ.css",
     "name": "app",
     "names": [
       "app.css"
@@ -88,7 +88,7 @@
     ]
   },
   "resources/js/charts-ga4.js": {
-    "file": "assets/charts-ga4-o8M3YMHw.js",
+    "file": "assets/charts-ga4-CRNT-UgQ.js",
     "name": "charts-ga4",
     "src": "resources/js/charts-ga4.js",
     "isEntry": true,

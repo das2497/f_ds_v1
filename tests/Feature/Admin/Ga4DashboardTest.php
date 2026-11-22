@@ -51,7 +51,7 @@ class Ga4DashboardTest extends TestCase
     private function fakeGa4ReportingApi(): void
     {
         $fixtures = [
-            '' => [[], ['totalUsers' => '120', 'sessions' => '150', 'screenPageViews' => '300', 'averageSessionDuration' => '45.5', 'bounceRate' => '0.42', 'keyEvents' => '10']],
+            '' => [[], ['totalUsers' => '120', 'sessions' => '150', 'screenPageViews' => '300', 'averageSessionDuration' => '45.5', 'bounceRate' => '0.42', 'keyEvents' => '10', 'activeUsers' => '7']],
             'date' => [
                 ['20240601', '20240602'],
                 ['totalUsers' => ['60', '65'], 'sessions' => ['70', '75']],
@@ -71,6 +71,10 @@ class Ga4DashboardTest extends TestCase
             'pagePath' => [
                 ['/', '/products'],
                 ['screenPageViews' => ['200', '100']],
+            ],
+            'unifiedScreenName' => [
+                ['Home', 'Product Page'],
+                ['activeUsers' => ['5', '3']],
             ],
         ];
 
@@ -139,5 +143,43 @@ class Ga4DashboardTest extends TestCase
 
         $response->assertOk();
         $response->assertSee("Couldn't load Google Analytics", false);
+    }
+
+    public function test_the_realtime_endpoint_returns_active_users_and_top_pages(): void
+    {
+        $this->configureGa4Reporting();
+        $this->fakeGa4ReportingApi();
+
+        $response = $this->actingAs($this->admin())->getJson(route('admin.analytics-ga4.realtime'));
+
+        $response->assertOk()->assertJson([
+            'configured' => true,
+            'activeUsers' => 7,
+            'topPages' => [
+                ['page' => 'Home', 'activeUsers' => 5],
+                ['page' => 'Product Page', 'activeUsers' => 3],
+            ],
+        ]);
+    }
+
+    public function test_the_realtime_endpoint_reports_not_configured(): void
+    {
+        $response = $this->actingAs($this->admin())->getJson(route('admin.analytics-ga4.realtime'));
+
+        $response->assertOk()->assertExactJson(['configured' => false]);
+    }
+
+    public function test_the_realtime_endpoint_reports_an_error_without_crashing(): void
+    {
+        $this->configureGa4Reporting();
+
+        Http::fake([
+            'oauth2.googleapis.com/*' => Http::response(['access_token' => 'fake-token']),
+            'analyticsdata.googleapis.com/*' => Http::response(['error' => 'denied'], 403),
+        ]);
+
+        $response = $this->actingAs($this->admin())->getJson(route('admin.analytics-ga4.realtime'));
+
+        $response->assertStatus(502)->assertJson(['configured' => true, 'error' => true]);
     }
 }

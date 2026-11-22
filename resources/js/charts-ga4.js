@@ -128,4 +128,27 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     });
   }
+
+  // ---------- Live Now (polls the realtime endpoint, no processing lag) ----------
+  var liveCountEl = document.getElementById("ga4-live-count");
+  var liveWrapEl = document.getElementById("ga4-live-now");
+  if (liveCountEl && window.ga4RealtimeUrl) {
+    var pollLiveNow = function () {
+      fetch(window.ga4RealtimeUrl, { headers: { "Accept": "application/json" } })
+        .then(function (res) { return res.json(); })
+        .then(function (payload) {
+          if (!payload.configured || payload.error) {
+            return;
+          }
+          liveCountEl.textContent = payload.activeUsers;
+          if (liveWrapEl && payload.topPages && payload.topPages.length) {
+            liveWrapEl.title = "Active on: " + payload.topPages.map(function (p) { return p.page + " (" + p.activeUsers + ")"; }).join(", ");
+          }
+        })
+        .catch(function () { /* transient network/API hiccup — keep the last known count */ });
+    };
+
+    pollLiveNow();
+    setInterval(pollLiveNow, 20000);
+  }
 });

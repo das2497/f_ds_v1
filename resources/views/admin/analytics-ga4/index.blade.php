@@ -32,13 +32,20 @@
             ];
         @endphp
 
-        <form method="GET" class="d-flex gap-2 mb-3 flex-wrap">
-            <select name="range" class="form-select form-select-sm" style="width:auto" onchange="this.form.submit()">
-                <option value="30d" @selected($range === '30d')>Last 30 Days</option>
-                <option value="7d" @selected($range === '7d')>Last 7 Days</option>
-                <option value="quarter" @selected($range === 'quarter')>This Quarter</option>
-            </select>
-        </form>
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+            <form method="GET" class="d-flex gap-2 flex-wrap">
+                <select name="range" class="form-select form-select-sm" style="width:auto" onchange="this.form.submit()">
+                    <option value="30d" @selected($range === '30d')>Last 30 Days</option>
+                    <option value="7d" @selected($range === '7d')>Last 7 Days</option>
+                    <option value="quarter" @selected($range === 'quarter')>This Quarter</option>
+                </select>
+            </form>
+
+            <div class="small text-muted-slate d-flex align-items-center gap-2" id="ga4-live-now" title="Active users in the last 30 minutes">
+                <span class="live-dot"></span>
+                <span>Live now: <strong id="ga4-live-count">—</strong> active user(s)</span>
+            </div>
+        </div>
 
         <div class="row g-3 mb-4">
             <div class="col-6 col-lg-3">
@@ -139,6 +146,7 @@
 
         <script>
             window.ga4ChartData = @json($chartData);
+            window.ga4RealtimeUrl = @json(route('admin.analytics-ga4.realtime'));
         </script>
         @vite(['resources/js/charts-ga4.js'])
     @endif

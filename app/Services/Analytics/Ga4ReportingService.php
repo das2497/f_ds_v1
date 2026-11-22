@@ -115,18 +115,62 @@ class Ga4ReportingService
     }
 
     /**
+     * Active users right now — GA4's Realtime API counts activity from
+     * roughly the last 30 minutes, with no processing lag (unlike
+     * runReport above), so this is what a "Live Now" indicator polls.
+     */
+    public function realtimeActiveUsers(): int
+    {
+        $row = $this->runRealtimeReport([], ['activeUsers'])->first();
+
+        return (int) ($row['activeUsers'] ?? 0);
+    }
+
+    /**
+     * @return Collection<int, array{page: string, activeUsers: int}>
+     */
+    public function realtimeTopPages(int $limit = 5): Collection
+    {
+        return $this->runRealtimeReport(['unifiedScreenName'], ['activeUsers'], orderByMetric: 'activeUsers', limit: $limit)
+            ->map(fn ($row) => [
+                'page' => $row['unifiedScreenName'] ?: '(not set)',
+                'activeUsers' => (int) $row['activeUsers'],
+            ]);
+    }
+
+    /**
      * @param  array<int, string>  $dimensions
      * @param  array<int, string>  $metrics
      * @return Collection<int, array<string, string>> each row keyed by dimension/metric name
      */
     private function runReport(Carbon $from, Carbon $to, array $dimensions, array $metrics, ?string $orderByDimension = null, ?string $orderByMetric = null, ?int $limit = null): Collection
     {
-        if (! $this->configured()) {
-            throw new RuntimeException('GA4 reporting is not configured.');
-        }
-
         $body = [
             'dateRanges' => [['startDate' => $from->toDateString(), 'endDate' => $to->toDateString()]],
+            ...$this->reportBody($dimensions, $metrics, $orderByDimension, $orderByMetric, $limit),
+        ];
+
+        return $this->runCollectedReport('runReport', $body);
+    }
+
+    /**
+     * @param  array<int, string>  $dimensions
+     * @param  array<int, string>  $metrics
+     * @return Collection<int, array<string, string>> each row keyed by dimension/metric name
+     */
+    private function runRealtimeReport(array $dimensions, array $metrics, ?string $orderByMetric = null, ?int $limit = null): Collection
+    {
+        return $this->runCollectedReport('runRealtimeReport', $this->reportBody($dimensions, $metrics, null, $orderByMetric, $limit));
+    }
+
+    /**
+     * @param  array<int, string>  $dimensions
+     * @param  array<int, string>  $metrics
+     * @return array<string, mixed>
+     */
+    private function reportBody(array $dimensions, array $metrics, ?string $orderByDimension, ?string $orderByMetric, ?int $limit): array
+    {
+        $body = [
             'dimensions' => array_map(fn ($name) => ['name' => $name], $dimensions),
             'metrics' => array_map(fn ($name) => ['name' => $name], $metrics),
         ];
@@ -141,9 +185,22 @@ class Ga4ReportingService
             $body['limit'] = $limit;
         }
 
+        return $body;
+    }
+
+    /**
+     * @param  array<string, mixed>  $body
+     * @return Collection<int, array<string, string>> each row keyed by dimension/metric name
+     */
+    private function runCollectedReport(string $endpoint, array $body): Collection
+    {
+        if (! $this->configured()) {
+            throw new RuntimeException('GA4 reporting is not configured.');
+        }
+
         $response = Http::withToken($this->accessToken())
             ->timeout(15)
-            ->post(self::BASE_URL."/properties/{$this->propertyId()}:runReport", $body)
+            ->post(self::BASE_URL."/properties/{$this->propertyId()}:{$endpoint}", $body)
             ->throw();
 
         $dimensionNames = collect($response->json('dimensionHeaders', []))->pluck('name');
