@@ -83,6 +83,8 @@ return [
     'ga4' => [
         'measurement_id' => env('GA4_MEASUREMENT_ID'),
         'api_secret' => env('GA4_API_SECRET'),
+        'property_id' => env('GA4_PROPERTY_ID'),
+        'reporting_credentials_path' => env('GA4_REPORTING_CREDENTIALS_PATH'),
     ],
 
     'meta' => [

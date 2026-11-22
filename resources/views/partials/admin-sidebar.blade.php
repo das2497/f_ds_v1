@@ -18,6 +18,7 @@
     <a class="nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}" href="{{ route('admin.dashboard') }}"><i class="bi bi-speedometer2"></i> Main Dashboard</a>
     <a class="nav-link {{ request()->routeIs('admin.analytics-utm') ? 'active' : '' }}" href="{{ route('admin.analytics-utm') }}"><i class="bi bi-graph-up"></i> UTM Attribution</a>
     <a class="nav-link {{ request()->routeIs('admin.analytics-demand') ? 'active' : '' }}" href="{{ route('admin.analytics-demand') }}"><i class="bi bi-bar-chart"></i> Demand Forecasting</a>
+    <a class="nav-link {{ request()->routeIs('admin.analytics-ga4') ? 'active' : '' }}" href="{{ route('admin.analytics-ga4') }}"><i class="bi bi-google"></i> Google Analytics</a>
   </nav>
 
   <div class="nav-section-label">Content</div>

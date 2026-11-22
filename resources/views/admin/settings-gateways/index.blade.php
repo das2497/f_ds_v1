@@ -123,6 +123,24 @@
         </div>
 
         <div class="table-admin p-4 mb-3">
+            <h6 class="mb-3"><i class="bi bi-graph-up me-2 text-accent"></i>GA4 Reporting (Admin Dashboard)</h6>
+            <div class="small text-muted-slate mb-3">
+                Lets the <a href="{{ route('admin.analytics-ga4') }}">GA4 dashboard</a> page pull live traffic/behavior data straight from your GA4 property. Separate from the Measurement ID/API Secret above — those only <em>send</em> purchase events, this only <em>reads</em> reports.
+                In <a href="https://console.cloud.google.com/iam-admin/serviceaccounts" target="_blank" rel="noopener">Google Cloud Console</a> create a service account, enable the "Google Analytics Data API", download its JSON key and paste it below, then in GA4 Admin &gt; Property Access Management add that service account's email as a <strong>Viewer</strong>.
+            </div>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label small">GA4 Property ID</label>
+                    <input type="text" name="ga4_property_id" class="form-control" value="{{ old('ga4_property_id', $settings['ga4.property_id']) }}" placeholder="e.g. 123456789 (GA4 Admin &gt; Property Settings)">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label small">Service Account JSON</label>
+                    <textarea name="ga4_reporting_credentials_json" class="form-control" rows="2" placeholder="{{ $settings['ga4.reporting_credentials_json'] ? 'A key is saved — paste a new one to replace it.' : '{ "type": "service_account", "client_email": "...", "private_key": "...", ... }' }}"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-admin p-4 mb-3">
             <h6 class="mb-3"><i class="bi bi-cart-plus me-2 text-accent"></i>AliExpress Importer (Chrome Extension)</h6>
             <div class="small text-muted-slate mb-3">Lets the one-click Chrome extension (<code>resources/chrome-extension/aliexpress-importer</code>) send a scraped product straight into the store as an Inactive product/variant set, pending review.</div>
             <div class="row g-3">

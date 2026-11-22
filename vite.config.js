@@ -10,6 +10,7 @@ export default defineConfig({
                 'resources/js/charts-dashboard.js',
                 'resources/js/charts-utm.js',
                 'resources/js/charts-demand.js',
+                'resources/js/charts-ga4.js',
                 'resources/js/ai-research-chat.js',
                 'resources/js/vendor-research.js',
                 'resources/js/admin-design-canvas.js',

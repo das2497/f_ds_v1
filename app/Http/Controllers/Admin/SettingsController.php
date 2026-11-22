@@ -21,7 +21,7 @@ class SettingsController extends Controller
         'printful.api_key', 'printful.store_id',
         'cj.api_key',
         'ollama.api_key', 'ollama.model',
-        'ga4.measurement_id', 'ga4.api_secret',
+        'ga4.measurement_id', 'ga4.api_secret', 'ga4.property_id', 'ga4.reporting_credentials_json',
         'meta.pixel_id', 'meta.access_token',
         'tiktok.pixel_code', 'tiktok.access_token',
         'google.client_id', 'google.client_secret',
@@ -49,6 +49,13 @@ class SettingsController extends Controller
             'ollama_model' => ['nullable', 'string', 'max:255'],
             'ga4_measurement_id' => ['nullable', 'string', 'max:255'],
             'ga4_api_secret' => ['nullable', 'string', 'max:255'],
+            'ga4_property_id' => ['nullable', 'string', 'max:255'],
+            'ga4_reporting_credentials_json' => ['nullable', 'json', function ($attribute, $value, $fail) {
+                $decoded = json_decode((string) $value, true);
+                if (filled($value) && (! is_array($decoded) || blank($decoded['private_key'] ?? null) || blank($decoded['client_email'] ?? null))) {
+                    $fail('That doesn\'t look like a Google service account key — it needs "client_email" and "private_key".');
+                }
+            }],
             'meta_pixel_id' => ['nullable', 'string', 'max:255'],
             'meta_access_token' => ['nullable', 'string', 'max:255'],
             'tiktok_pixel_code' => ['nullable', 'string', 'max:255'],
@@ -79,6 +86,8 @@ class SettingsController extends Controller
             'ollama_model' => 'ollama.model',
             'ga4_measurement_id' => 'ga4.measurement_id',
             'ga4_api_secret' => 'ga4.api_secret',
+            'ga4_property_id' => 'ga4.property_id',
+            'ga4_reporting_credentials_json' => 'ga4.reporting_credentials_json',
             'meta_pixel_id' => 'meta.pixel_id',
             'meta_access_token' => 'meta.access_token',
             'tiktok_pixel_code' => 'tiktok.pixel_code',
@@ -102,6 +111,10 @@ class SettingsController extends Controller
 
         if (array_intersect($changed, ['google_sheets.credentials_json', 'google_sheets.spreadsheet_id'])) {
             Cache::forget('google_sheets_access_token');
+        }
+
+        if (array_intersect($changed, ['ga4.reporting_credentials_json', 'ga4.property_id'])) {
+            Cache::forget('google_analytics_access_token');
         }
 
         if ($changed) {
