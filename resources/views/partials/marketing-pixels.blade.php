@@ -1,16 +1,24 @@
 @php
+    // The Gateway Settings admin UI saves these to AppSetting (database),
+    // not .env — the GA4/Meta/TikTok *services* already fall back from
+    // AppSetting to config() (see Ga4MeasurementProtocolService etc.), so
+    // these browser-side tags need the same fallback or a key configured
+    // only through the admin panel silently never loads here.
     $consented = request()->cookie('analytics_consent') === 'granted';
+    $ga4MeasurementId = \App\Models\AppSetting::get('ga4.measurement_id') ?: config('services.ga4.measurement_id');
+    $metaPixelId = \App\Models\AppSetting::get('meta.pixel_id') ?: config('services.meta.pixel_id');
+    $tiktokPixelCode = \App\Models\AppSetting::get('tiktok.pixel_code') ?: config('services.tiktok.pixel_code');
 @endphp
-@if ($consented && config('services.ga4.measurement_id'))
-<script async src="https://www.googletagmanager.com/gtag/js?id={{ config('services.ga4.measurement_id') }}"></script>
+@if ($consented && $ga4MeasurementId)
+<script async src="https://www.googletagmanager.com/gtag/js?id={{ $ga4MeasurementId }}"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
-  gtag('config', '{{ config('services.ga4.measurement_id') }}');
+  gtag('config', '{{ $ga4MeasurementId }}');
 </script>
 @endif
-@if ($consented && config('services.meta.pixel_id'))
+@if ($consented && $metaPixelId)
 <script>
 !function(f,b,e,v,n,t,s)
 {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
@@ -20,15 +28,15 @@ n.queue=[];t=b.createElement(e);t.async=!0;
 t.src=v;s=b.getElementsByTagName(e)[0];
 s.parentNode.insertBefore(t,s)}(window, document,'script',
 'https://connect.facebook.net/en_US/fbevents.js');
-fbq('init', '{{ config('services.meta.pixel_id') }}');
+fbq('init', '{{ $metaPixelId }}');
 fbq('track', 'PageView');
 </script>
 @endif
-@if ($consented && config('services.tiktok.pixel_code'))
+@if ($consented && $tiktokPixelCode)
 <script>
 !function (w, d, t) {
   w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];ttq.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie"],ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);ttq.instance=function(t){for(var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n]);return e},ttq.load=function(e,n){var i="https://analytics.tiktok.com/i18n/pixel/events.js";ttq._i=ttq._i||{},ttq._i[e]=[],ttq._i[e]._u=i,ttq._t=ttq._t||{},ttq._t[e]=+new Date,ttq._o=ttq._o||{},ttq._o[e]=n||{};var o=document.createElement("script");o.type="text/javascript",o.async=!0,o.src=i+"?sdkid="+e+"&lib="+t;var a=document.getElementsByTagName("script")[0];a.parentNode.insertBefore(o,a)};
-  ttq.load('{{ config('services.tiktok.pixel_code') }}');
+  ttq.load('{{ $tiktokPixelCode }}');
   ttq.page();
 }(window, document, 'ttq');
 </script>

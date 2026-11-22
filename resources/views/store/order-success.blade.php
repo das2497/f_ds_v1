@@ -148,7 +148,7 @@
 
     @if ($order->status !== 'pending_payment' && $order->status !== 'cancelled' && request()->cookie('analytics_consent') === 'granted')
         var purchaseEventId = 'purchase-{{ $order->order_number }}';
-        @if (config('services.ga4.measurement_id'))
+        @if (\App\Models\AppSetting::get('ga4.measurement_id') ?: config('services.ga4.measurement_id'))
             if (typeof gtag === 'function') {
                 gtag('event', 'purchase', {
                     transaction_id: '{{ $order->order_number }}',
@@ -157,7 +157,7 @@
                 });
             }
         @endif
-        @if (config('services.meta.pixel_id'))
+        @if (\App\Models\AppSetting::get('meta.pixel_id') ?: config('services.meta.pixel_id'))
             if (typeof fbq === 'function') {
                 fbq('track', 'Purchase', {
                     currency: '{{ $order->currency }}',
@@ -165,7 +165,7 @@
                 }, { eventID: purchaseEventId });
             }
         @endif
-        @if (config('services.tiktok.pixel_code'))
+        @if (\App\Models\AppSetting::get('tiktok.pixel_code') ?: config('services.tiktok.pixel_code'))
             if (typeof ttq === 'object') {
                 ttq.track('CompletePayment', {
                     currency: '{{ $order->currency }}',
