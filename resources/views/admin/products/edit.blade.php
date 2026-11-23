@@ -168,6 +168,20 @@
                     </div>
                 @endif
 
+                <div class="modal fade" id="imageZoomModal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Product Image</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body text-center">
+                                <img src="" class="js-image-zoom-preview" style="max-width:100%;max-height:75vh;object-fit:contain">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 @if ($product->source_vendor === 'printful')
                     @foreach ($product->variants as $variant)
                         @include('admin.products._design-canvas', [
@@ -246,7 +260,7 @@
                         @forelse ($product->images ?? [] as $image)
                             <div class="col-6 js-image-tile" draggable="true">
                                 <div class="cart-item__image position-relative" style="width:100%;height:90px;cursor:grab">
-                                    <img src="{{ $image }}" draggable="false">
+                                    <img src="{{ $image }}" draggable="false" class="js-zoom-image" style="cursor:zoom-in">
                                     <input type="checkbox" name="keep_images[]" value="{{ $image }}" checked class="d-none js-image-input">
                                     <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-1 js-remove-image" style="padding:0;width:22px;height:22px;line-height:1" aria-label="Remove this image">&times;</button>
                                     <span class="image-picker-item__primary-tag js-main-badge" style="{{ $loop->first ? '' : 'display:none' }}">Main photo</span>
@@ -389,6 +403,15 @@
                     tile.remove();
                     refresh();
                 });
+            });
+
+            var zoomModalEl = document.getElementById('imageZoomModal');
+            var zoomPreview = zoomModalEl ? zoomModalEl.querySelector('.js-image-zoom-preview') : null;
+            row.addEventListener('click', function (e) {
+                var img = e.target.closest('.js-zoom-image');
+                if (!img || !zoomModalEl || !window.bootstrap) return;
+                zoomPreview.src = img.src;
+                window.bootstrap.Modal.getOrCreateInstance(zoomModalEl).show();
             });
 
             var dragged = null;
