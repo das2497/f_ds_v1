@@ -116,14 +116,18 @@ async function scrapeAliExpressProduct() {
     }
   };
 
-  const propertyWraps = Array.from(document.querySelectorAll('[class*="sku-item--wrap"]'));
+  // `sku-item--wrap` is the single OUTER container AliExpress wraps every
+  // property group in (there's only ever one on the page) — each actual
+  // group (Color, Size, ...) is a `sku-item--property` child inside it, so
+  // that's what has to be enumerated per group, not the outer wrap itself.
+  const propertyWraps = Array.from(document.querySelectorAll('[class*="sku-item--property"]'));
 
   if (propertyWraps.length > 0) {
     const recurse = async (wrapIndex, selections) => {
       if (variants.length >= MAX_VARIANTS) {
         return;
       }
-      const currentWraps = Array.from(document.querySelectorAll('[class*="sku-item--wrap"]'));
+      const currentWraps = Array.from(document.querySelectorAll('[class*="sku-item--property"]'));
       const wrap = currentWraps[wrapIndex];
       if (!wrap) {
         return;
