@@ -17,9 +17,11 @@ use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 class ProductController extends Controller
 {
@@ -437,6 +439,41 @@ class ProductController extends Controller
         $imageTemplateUrl = $this->imageTemplateUrl();
 
         return view('admin.products.edit', compact('product', 'categories', 'availableVendorVariants', 'designPlacements', 'pickableImages', 'profitMarginPercent', 'imageTemplateUrl'));
+    }
+
+    /**
+     * Streams one of this product's own gallery images back with a
+     * forced "attachment" disposition, so the browser saves it instead of
+     * just navigating to it — needed because most of these URLs point at
+     * a vendor CDN (Printful, AliExpress, CJ) that won't set that header
+     * itself. Restricted to $product->images (rather than taking any URL)
+     * so this can't be used as an open fetch proxy.
+     */
+    public function downloadImage(Request $request, Product $product): HttpResponse
+    {
+        $validated = $request->validate(['url' => ['required', 'string']]);
+        $url = $validated['url'];
+
+        abort_unless(in_array($url, $product->images ?? [], true), 404);
+
+        $position = array_search($url, $product->images, true) + 1;
+        $extension = pathinfo(parse_url($url, PHP_URL_PATH) ?? '', PATHINFO_EXTENSION) ?: 'jpg';
+        $filename = Str::slug($product->title).'-'.$position.'.'.$extension;
+
+        $publicDiskPrefix = rtrim(Storage::disk('public')->url(''), '/');
+        if (Str::startsWith($url, $publicDiskPrefix)) {
+            $path = ltrim(Str::after($url, $publicDiskPrefix), '/');
+            abort_unless(Storage::disk('public')->exists($path), 404);
+
+            return Storage::disk('public')->download($path, $filename);
+        }
+
+        $response = Http::timeout(15)->get($url);
+        abort_unless($response->successful(), 404);
+
+        return response()->streamDownload(function () use ($response) {
+            echo $response->body();
+        }, $filename, ['Content-Type' => $response->header('Content-Type') ?: 'application/octet-stream']);
     }
 
     public function update(Request $request, Product $product): RedirectResponse

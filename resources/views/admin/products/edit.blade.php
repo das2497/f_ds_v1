@@ -178,6 +178,9 @@
                             <div class="modal-body text-center">
                                 <img src="" class="js-image-zoom-preview" style="max-width:100%;max-height:75vh;object-fit:contain">
                             </div>
+                            <div class="modal-footer">
+                                <a href="#" class="btn btn-accent js-image-zoom-download"><i class="bi bi-download"></i> Download</a>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -407,10 +410,13 @@
 
             var zoomModalEl = document.getElementById('imageZoomModal');
             var zoomPreview = zoomModalEl ? zoomModalEl.querySelector('.js-image-zoom-preview') : null;
+            var zoomDownload = zoomModalEl ? zoomModalEl.querySelector('.js-image-zoom-download') : null;
+            var downloadUrlBase = @json(route('admin.products.images.download', $product));
             row.addEventListener('click', function (e) {
                 var img = e.target.closest('.js-zoom-image');
                 if (!img || !zoomModalEl || !window.bootstrap) return;
                 zoomPreview.src = img.src;
+                if (zoomDownload) zoomDownload.href = downloadUrlBase + '?url=' + encodeURIComponent(img.src);
                 window.bootstrap.Modal.getOrCreateInstance(zoomModalEl).show();
             });
 
