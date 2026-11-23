@@ -75,51 +75,110 @@ async function scrapeAliExpressProduct() {
   const images = Array.from(imageSet).slice(0, 10);
 
   // Real AliExpress variant pricing/stock is combinatorial (Color x Size,
-  // ...) and the full matrix is only available by simulating every click
-  // across every property group, which this doesn't attempt. Instead this
-  // builds one variant per option of the FIRST property group only (almost
-  // always "Color", which is what the product photos key off), skipping
-  // options already marked sold out. Each option IS clicked, though, so its
-  // own price — which can differ from the base/default option, e.g. a
-  // "Plus size" color variant that costs more — gets read fresh rather than
-  // every variant sharing the page's initial price. Any pricing that still
-  // varies by a second dimension (e.g. Size) gets corrected afterwards in
-  // the admin panel or synced Sheet.
-  const variants = [];
-  const firstPropertyWrap = document.querySelector('[class*="sku-item--wrap"]');
-  if (firstPropertyWrap) {
-    const skusContainer = firstPropertyWrap.querySelector('[class*="sku-item--skus"]');
-    const items = skusContainer ? Array.from(skusContainer.children) : [];
-    for (const item of items) {
-      if (/soldOut/.test(item.className)) {
-        continue;
-      }
-      const img = item.querySelector('img');
-      const label = (img && img.getAttribute('alt')) || text(item) || item.getAttribute('title') || 'Option';
-      const rawImage = img ? (img.getAttribute('src') || img.getAttribute('data-src') || null) : null;
+  // ...), so every property group (not just the first) has to be walked and
+  // every combination across ALL groups actually clicked through — a 4-color
+  // x 6-size product is 24 variants, not 4. Each group's sold-out items are
+  // skipped, and because selecting one group's option can grey out/disable
+  // options in another group (e.g. a color that's out of stock in size L),
+  // every group's item list is re-read from the live DOM right before it's
+  // iterated, rather than captured once up front.
+  const isUnselectable = (item) => /soldOut|disabled/i.test(item.className)
+    || item.getAttribute('aria-disabled') === 'true';
 
-      let variantPrice = price;
-      try {
-        item.click();
-        await sleep(400);
-        const updated = readPrice();
-        if (updated > 0) {
-          variantPrice = updated;
-        }
-      } catch (e) {
-        // Fall back to the base price if clicking/reading this option fails.
+  // Title text for a property group ("Color", "Size(US)", ...) is read by
+  // removing the actual options from a clone of the wrap and reading what's
+  // left, rather than matching a class name for the title element itself —
+  // that text node's own class is just as likely to rot across AliExpress
+  // deploys as the ones already called out above, and this needs no class
+  // match to survive that.
+  const propertyTitle = (wrap, skusContainer) => {
+    const clone = wrap.cloneNode(true);
+    if (skusContainer) {
+      const skusClone = clone.querySelector('[class*="sku-item--skus"]');
+      if (skusClone) {
+        skusClone.remove();
       }
-
-      variants.push({
-        option_label: label,
-        color: label,
-        size: null,
-        vendor_sku: null,
-        weight_lb: null,
-        image: rawImage ? rawImage.replace(/_\d+x\d+.*$/, '') : null,
-        cost_price: variantPrice,
-      });
     }
+    return clone.textContent.trim();
+  };
+
+  const MAX_VARIANTS = 100;
+  const variants = [];
+
+  const assignSelection = (variant, extras, propertyName, index, label) => {
+    const lower = propertyName.toLowerCase();
+    if (variant.color === null && (/colou?r/.test(lower) || (!lower && index === 0))) {
+      variant.color = label;
+    } else if (variant.size === null && (/size|length|width/.test(lower) || (!lower && index === 1))) {
+      variant.size = label;
+    } else {
+      extras.push(propertyName ? `${propertyName}: ${label}` : label);
+    }
+  };
+
+  const propertyWraps = Array.from(document.querySelectorAll('[class*="sku-item--wrap"]'));
+
+  if (propertyWraps.length > 0) {
+    const recurse = async (wrapIndex, selections) => {
+      if (variants.length >= MAX_VARIANTS) {
+        return;
+      }
+      const currentWraps = Array.from(document.querySelectorAll('[class*="sku-item--wrap"]'));
+      const wrap = currentWraps[wrapIndex];
+      if (!wrap) {
+        return;
+      }
+      const skusContainer = wrap.querySelector('[class*="sku-item--skus"]');
+      const items = skusContainer ? Array.from(skusContainer.children) : [];
+      const propertyName = propertyTitle(wrap, skusContainer);
+
+      for (const item of items) {
+        if (variants.length >= MAX_VARIANTS) {
+          return;
+        }
+        if (isUnselectable(item)) {
+          continue;
+        }
+        const img = item.querySelector('img');
+        const label = (img && img.getAttribute('alt')) || text(item) || item.getAttribute('title') || 'Option';
+        const rawImage = img ? (img.getAttribute('src') || img.getAttribute('data-src') || null) : null;
+
+        try {
+          item.click();
+          await sleep(400);
+        } catch (e) {
+          continue;
+        }
+
+        const nextSelections = selections.concat([{ wrapIndex, propertyName, label, image: rawImage }]);
+
+        if (wrapIndex + 1 < propertyWraps.length) {
+          await recurse(wrapIndex + 1, nextSelections);
+        } else {
+          const variant = { color: null, size: null, vendor_sku: null, weight_lb: null, image: null, cost_price: price };
+          const extras = [];
+          for (const [i, selection] of nextSelections.entries()) {
+            assignSelection(variant, extras, selection.propertyName, i, selection.label);
+            if (!variant.image && selection.image) {
+              variant.image = selection.image;
+            }
+          }
+
+          const updated = readPrice();
+          if (updated > 0) {
+            variant.cost_price = updated;
+          }
+          variant.image = variant.image ? variant.image.replace(/_\d+x\d+.*$/, '') : null;
+          variant.option_label = extras.length > 0
+            ? nextSelections.map((s) => s.label).join(' / ') + ' (' + extras.join(', ') + ')'
+            : nextSelections.map((s) => s.label).join(' / ');
+
+          variants.push(variant);
+        }
+      }
+    };
+
+    await recurse(0, []);
   }
   if (variants.length === 0) {
     variants.push({
